@@ -115,21 +115,229 @@
         align-items: center;
       }
 
-      .splash-video-container {
-        width: min(400px, 80vw);
-        height: min(400px, 80vw);
-        border-radius: 50%;
-        overflow: hidden;
-        margin-bottom: 2rem;
+      .retina-scanner {
+        position: relative;
+        width: min(280px, 60vw);
+        height: min(280px, 60vw);
+        margin-bottom: 3rem;
         opacity: 0;
-        transform: scale(0.9);
-        box-shadow: 0 0 80px rgba(255, 255, 255, 0.1);
+        transform: scale(0.85);
       }
 
-      .splash-video {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
+      .retina-outer {
+        position: absolute;
+        inset: 0;
+        border-radius: 50%;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+      }
+
+      .retina-ring {
+        position: absolute;
+        border-radius: 50%;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+      }
+
+      .retina-ring-1 {
+        inset: 10%;
+      }
+
+      .retina-ring-2 {
+        inset: 20%;
+      }
+
+      .retina-ring-3 {
+        inset: 30%;
+      }
+
+      .retina-ring-4 {
+        inset: 40%;
+      }
+
+      .retina-ring-5 {
+        inset: 50%;
+      }
+
+      .retina-ring-6 {
+        inset: 60%;
+      }
+
+      .retina-ring-7 {
+        inset: 70%;
+      }
+
+      .retina-ring-8 {
+        inset: 80%;
+      }
+
+      .retina-iris {
+        position: absolute;
+        inset: 35%;
+        border-radius: 50%;
+        background: radial-gradient(circle at 40% 40%, rgba(255, 255, 255, 0.08) 0%, transparent 70%);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      .retina-pupil {
+        position: absolute;
+        inset: 44%;
+        border-radius: 50%;
+        background: rgba(10, 10, 10, 0.6);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.2);
+      }
+
+      .retina-center-dot {
+        position: absolute;
+        inset: 48%;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(200, 30, 30, 0.9) 0%, rgba(180, 20, 20, 0.8) 40%, rgba(100, 10, 10, 0.6) 100%);
+        box-shadow: 0 0 8px rgba(220, 40, 40, 0.5), 0 0 16px rgba(200, 30, 30, 0.3);
+        opacity: 0;
+      }
+
+      .retina-scanner.active .retina-center-dot {
+        animation: centerDotPulse 2s ease-in-out infinite 0.3s;
+      }
+
+      @keyframes centerDotPulse {
+        0%, 100% {
+          opacity: 0.7;
+          transform: scale(1);
+        }
+        50% {
+          opacity: 1;
+          transform: scale(1.05);
+        }
+      }
+
+      .retina-scan-line {
+        position: absolute;
+        left: 12%;
+        right: 12%;
+        height: 2px;
+        background: linear-gradient(90deg, transparent, rgba(255, 100, 100, 0.5), rgba(255, 255, 255, 0.9), rgba(255, 100, 100, 0.5), transparent);
+        box-shadow: 0 0 20px rgba(255, 100, 100, 0.2), 0 0 40px rgba(255, 255, 255, 0.1);
+        opacity: 0;
+        border-radius: 2px;
+      }
+
+      .retina-scanner.active .retina-scan-line {
+        animation: scanMove 2.8s ease-in-out infinite;
+      }
+
+      @keyframes scanMove {
+        0% {
+          top: 12%;
+          opacity: 0;
+        }
+        8% {
+          opacity: 1;
+        }
+        92% {
+          opacity: 1;
+        }
+        100% {
+          top: 88%;
+          opacity: 0;
+        }
+      }
+
+      .retina-glow {
+        position: absolute;
+        inset: 25%;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(255, 255, 255, 0.05) 0%, transparent 60%);
+        opacity: 0;
+      }
+
+      .retina-scanner.active .retina-glow {
+        animation: retinaPulse 3s ease-in-out infinite;
+      }
+
+      @keyframes retinaPulse {
+        0%, 100% {
+          opacity: 0.3;
+          transform: scale(1);
+        }
+        50% {
+          opacity: 0.6;
+          transform: scale(1.05);
+        }
+      }
+
+      .retina-accent {
+        position: absolute;
+        inset: 42%;
+        border-radius: 50%;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        opacity: 0;
+      }
+
+      .retina-scanner.active .retina-accent {
+        animation: accentPulse 2s ease-in-out infinite 0.5s;
+      }
+
+      @keyframes accentPulse {
+        0%, 100% {
+          opacity: 0.2;
+          transform: scale(1);
+        }
+        50% {
+          opacity: 0.5;
+          transform: scale(1.02);
+        }
+      }
+
+      .retina-corner {
+        position: absolute;
+        width: 20px;
+        height: 20px;
+        border-color: rgba(255, 255, 255, 0.2);
+        border-style: solid;
+        border-width: 0;
+        opacity: 0;
+      }
+
+      .retina-corner-tl {
+        top: 5%;
+        left: 5%;
+        border-top-width: 1px;
+        border-left-width: 1px;
+      }
+
+      .retina-corner-tr {
+        top: 5%;
+        right: 5%;
+        border-top-width: 1px;
+        border-right-width: 1px;
+      }
+
+      .retina-corner-bl {
+        bottom: 5%;
+        left: 5%;
+        border-bottom-width: 1px;
+        border-left-width: 1px;
+      }
+
+      .retina-corner-br {
+        bottom: 5%;
+        right: 5%;
+        border-bottom-width: 1px;
+        border-right-width: 1px;
+      }
+
+      .retina-scanner.active .retina-corner {
+        animation: cornerFade 3s ease-in-out infinite;
+        opacity: 0.5;
+      }
+
+      @keyframes cornerFade {
+        0%, 100% {
+          opacity: 0.3;
+        }
+        50% {
+          opacity: 0.6;
+        }
       }
 
       .splash-logo-container {
@@ -544,10 +752,26 @@
       <div class="splash-orb splash-orb-3"></div>
 
       <div class="splash-content">
-        <div class="splash-video-container">
-          <video class="splash-video" id="splash-video" autoplay muted playsinline loop>
-            <source src="splash1.mp4" type="video/mp4" />
-          </video>
+        <div class="retina-scanner" id="retina-scanner">
+          <div class="retina-outer"></div>
+          <div class="retina-ring retina-ring-1"></div>
+          <div class="retina-ring retina-ring-2"></div>
+          <div class="retina-ring retina-ring-3"></div>
+          <div class="retina-ring retina-ring-4"></div>
+          <div class="retina-ring retina-ring-5"></div>
+          <div class="retina-ring retina-ring-6"></div>
+          <div class="retina-ring retina-ring-7"></div>
+          <div class="retina-ring retina-ring-8"></div>
+          <div class="retina-iris"></div>
+          <div class="retina-pupil"></div>
+          <div class="retina-center-dot"></div>
+          <div class="retina-glow"></div>
+          <div class="retina-accent"></div>
+          <div class="retina-scan-line"></div>
+          <div class="retina-corner retina-corner-tl"></div>
+          <div class="retina-corner retina-corner-tr"></div>
+          <div class="retina-corner retina-corner-bl"></div>
+          <div class="retina-corner retina-corner-br"></div>
         </div>
         <div class="splash-logo-container">
           <div class="splash-logo" id="splash-logo">Make It</div>
@@ -674,12 +898,15 @@
         ease: 'power2.out'
       }, 0.2);
 
-      // Video container entrance
-      splashTL.to('.splash-video-container', {
+      // Retina scanner entrance
+      splashTL.to('.retina-scanner', {
         opacity: 1,
         scale: 1,
         duration: 1.6,
-        ease: 'power3.out'
+        ease: 'power3.out',
+        onComplete: () => {
+          document.getElementById('retina-scanner').classList.add('active');
+        }
       }, 0.2);
 
       // Logo entrance
