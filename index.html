@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Make It</title>
+    <title>Metro Nexus</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Asimovian&family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..900;1,6..96,400..900&display=swap" rel="stylesheet">
@@ -15,534 +15,227 @@
         --text: #f5f5f5;
         --muted: #999999;
         --border: rgba(255, 255, 255, 0.1);
+        --accent: #4a90e2;
       }
 
-      * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-      }
-
-      html {
-        scroll-behavior: smooth;
-      }
-
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html { scroll-behavior: smooth; }
       body {
         font-family: 'Asimovian', -apple-system, BlinkMacSystemFont, sans-serif;
-        background: var(--bg);
-        color: var(--text);
-        overflow-x: hidden;
-        line-height: 1.5;
-        -webkit-font-smoothing: antialiased;
-        -moz-osx-font-smoothing: grayscale;
+        background: var(--bg); color: var(--text); overflow-x: hidden;
+        line-height: 1.5; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
       }
-
-      body.loading {
-        overflow: hidden;
-      }
+      body.loading { overflow: hidden; }
 
       /* ===== SPLASH SCREEN ===== */
-      .splash {
-        position: fixed;
-        inset: 0;
-        z-index: 10000;
-        background: #030303;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        overflow: hidden;
-      }
+      .splash { position: fixed; inset: 0; z-index: 10000; background: #030303; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+      .splash-glow { position: absolute; width: 600px; height: 600px; border-radius: 50%; background: radial-gradient(circle, rgba(255, 255, 255, 0.04) 0%, transparent 70%); pointer-events: none; filter: blur(80px); }
+      .splash-glow-1 { top: 20%; left: 30%; transform: translate(-50%, -50%); }
+      .splash-glow-2 { bottom: 30%; right: 20%; transform: translate(50%, 50%); }
+      .splash-orb { position: absolute; border-radius: 50%; pointer-events: none; }
+      .splash-orb-1 { width: 4px; height: 4px; background: rgba(255, 255, 255, 0.3); top: 25%; left: 20%; }
+      .splash-orb-2 { width: 3px; height: 3px; background: rgba(255, 255, 255, 0.2); top: 60%; right: 25%; }
+      .splash-orb-3 { width: 5px; height: 5px; background: rgba(255, 255, 255, 0.15); bottom: 25%; left: 35%; }
 
-      .splash-glow {
-        position: absolute;
-        width: 600px;
-        height: 600px;
-        border-radius: 50%;
-        background: radial-gradient(circle, rgba(255, 255, 255, 0.04) 0%, transparent 70%);
-        pointer-events: none;
-        filter: blur(80px);
-      }
-
-      .splash-glow-1 {
-        top: 20%;
-        left: 30%;
-        transform: translate(-50%, -50%);
-      }
-
-      .splash-glow-2 {
-        bottom: 30%;
-        right: 20%;
-        transform: translate(50%, 50%);
-      }
-
-      .splash-orb {
-        position: absolute;
-        border-radius: 50%;
-        pointer-events: none;
-      }
-
-      .splash-orb-1 {
-        width: 4px;
-        height: 4px;
-        background: rgba(255, 255, 255, 0.3);
-        top: 25%;
-        left: 20%;
-      }
-
-      .splash-orb-2 {
-        width: 3px;
-        height: 3px;
-        background: rgba(255, 255, 255, 0.2);
-        top: 60%;
-        right: 25%;
-      }
-
-      .splash-orb-3 {
-        width: 5px;
-        height: 5px;
-        background: rgba(255, 255, 255, 0.15);
-        bottom: 25%;
-        left: 35%;
-      }
-
-      .splash-content {
-        position: relative;
-        z-index: 10;
-        text-align: center;
-        padding: 3rem;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-      }
-
-      .splash-video-container {
-        width: min(400px, 80vw);
-        height: min(400px, 80vw);
-        border-radius: 50%;
-        overflow: hidden;
-        margin-bottom: 2rem;
-        opacity: 0;
-        transform: scale(0.9);
-        box-shadow: 0 0 80px rgba(255, 255, 255, 0.1);
-      }
-
-      .splash-video {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-      }
-
-      .splash-logo-container {
-        position: relative;
-        margin-bottom: 2.5rem;
-      }
-
-      .splash-logo {
-        font-family: 'Bodoni Moda', serif;
-        font-size: clamp(2.5rem, 8vw, 4rem);
-        font-weight: 700;
-        letter-spacing: 0.2em;
-        text-transform: uppercase;
-        color: rgba(255, 255, 255, 0.95);
-        opacity: 0;
-        transform: translateY(20px);
-      }
-
-      .splash-tagline {
-        font-size: 0.9rem;
-        font-weight: 300;
-        color: var(--muted);
-        letter-spacing: 0.15em;
-        text-transform: uppercase;
-        margin-bottom: 3rem;
-        opacity: 0;
-      }
-
-      .splash-loader {
-        width: 200px;
-        height: 2px;
-        background: rgba(255, 255, 255, 0.08);
-        border-radius: 2px;
-        margin: 0 auto;
-        overflow: hidden;
-          opacity: 0;
-      }
-
-      .splash-loader-bar {
-        width: 0%;
-        height: 100%;
-        background: linear-gradient(90deg, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.9));
-        border-radius: 2px;
-      }
-
-      .splash-percentage {
-        margin-top: 1.5rem;
-        font-size: 0.75rem;
-        font-weight: 400;
-        color: rgba(255, 255, 255, 0.4);
-        letter-spacing: 0.3em;
-        opacity: 0;
-      }
+      .splash-content { position: relative; z-index: 10; text-align: center; padding: 3rem; display: flex; flex-direction: column; align-items: center; }
+      .splash-video-container { width: min(400px, 80vw); height: min(400px, 80vw); border-radius: 50%; overflow: hidden; margin-bottom: 2rem; opacity: 0; transform: scale(0.9); box-shadow: 0 0 80px rgba(255, 255, 255, 0.1); }
+      .splash-video { width: 100%; height: 100%; object-fit: cover; }
+      .splash-logo-container { position: relative; margin-bottom: 2.5rem; }
+      .splash-logo { font-family: 'Bodoni Moda', serif; font-size: clamp(2.5rem, 8vw, 4rem); font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: rgba(255, 255, 255, 0.95); opacity: 0; transform: translateY(20px); }
+      .splash-tagline { font-size: 0.9rem; font-weight: 300; color: var(--muted); letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 3rem; opacity: 0; }
+      .splash-loader { width: 200px; height: 2px; background: rgba(255, 255, 255, 0.08); border-radius: 2px; margin: 0 auto; overflow: hidden; opacity: 0; }
+      .splash-loader-bar { width: 0%; height: 100%; background: linear-gradient(90deg, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.9)); border-radius: 2px; }
+      .splash-percentage { margin-top: 1.5rem; font-size: 0.75rem; font-weight: 400; color: rgba(255, 255, 255, 0.4); letter-spacing: 0.3em; opacity: 0; }
 
       /* ===== MAIN CONTENT ===== */
-      .main {
-        opacity: 0;
-        visibility: hidden;
-      }
-
-      .main.visible {
-        opacity: 1;
-        visibility: visible;
-      }
+      .main { opacity: 0; visibility: hidden; }
+      .main.visible { opacity: 1; visibility: visible; }
 
       /* ===== HERO SECTION ===== */
-      .hero {
-        min-height: 100vh;
-        position: relative;
-        display: flex;
-        align-items: center;
-        padding: 8rem 6rem;
-        overflow: hidden;
-      }
-
-      .hero-logo-bg {
-        position: absolute;
-        font-family: 'Bodoni Moda', serif;
-        font-size: clamp(12rem, 28vw, 26rem);
-        font-weight: 900;
-        color: rgba(255, 255, 255, 0.03);
-        letter-spacing: -0.05em;
-        white-space: nowrap;
-        left: -5%;
-        top: 50%;
-        transform: translateY(-50%);
-        user-select: none;
-        pointer-events: none;
-        z-index: 0;
-      }
-
-      .hero-content {
-        position: relative;
-        z-index: 10;
-        max-width: 800px;
-      }
-
-      .hero-label {
-        font-size: 0.75rem;
-        font-weight: 500;
-        letter-spacing: 0.35em;
-        text-transform: uppercase;
-        color: var(--muted);
-        margin-bottom: 2rem;
-      }
-
-      .hero-title {
-        font-family: 'Bodoni Moda', serif;
-        font-size: clamp(2.8rem, 5.5vw, 4.8rem);
-        font-weight: 300;
-        line-height: 1.08;
-        letter-spacing: -0.03em;
-        margin-bottom: 2rem;
-        color: rgba(255, 255, 255, 0.95);
-      }
-
-      .hero-description {
-        font-size: 1.05rem;
-        font-weight: 300;
-        line-height: 1.85;
-        color: rgba(255, 255, 255, 0.55);
-        max-width: 560px;
-      }
+      .hero { height: 100vh; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 8rem 6rem; overflow: hidden; text-align: center; }
+      .hero-logo-bg { position: absolute; font-family: 'Bodoni Moda', serif; font-size: clamp(12rem, 28vw, 26rem); font-weight: 900; color: rgba(255, 255, 255, 0.03); letter-spacing: -0.05em; white-space: nowrap; left: 50%; top: 50%; transform: translate(-50%, -50%); user-select: none; pointer-events: none; z-index: 0; }
+      .hero-content { position: relative; z-index: 10; display: flex; flex-direction: column; align-items: center; }
+      .hero-label { font-size: 0.75rem; font-weight: 500; letter-spacing: 0.35em; text-transform: uppercase; color: var(--muted); margin-bottom: 2rem; }
+      .hero-title-container { overflow: hidden; margin-bottom: 1rem; }
+      .hero-title { font-family: 'Bodoni Moda', serif; font-size: clamp(3rem, 6vw, 6rem); font-weight: 300; line-height: 1.08; letter-spacing: 0.05em; color: rgba(255, 255, 255, 0.95); display: flex; gap: 0.2rem; }
+      .hero-title .char { display: inline-block; transform: translateY(100%); opacity: 0; }
+      
+      .maglev-graphic { width: 280px; height: 6px; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.8), transparent); border-radius: 10px; position: relative; margin-top: 3rem; box-shadow: 0 0 20px rgba(74, 144, 226, 0.4); animation: float 4s ease-in-out infinite; opacity: 0; }
+      .maglev-graphic::after { content: ''; position: absolute; bottom: -15px; left: 50%; transform: translateX(-50%); width: 150px; height: 4px; background: rgba(74, 144, 226, 0.5); filter: blur(8px); border-radius: 50%; }
+      @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+      
+      .scroll-cta { position: absolute; bottom: 3rem; display: flex; flex-direction: column; align-items: center; gap: 0.5rem; font-size: 0.75rem; letter-spacing: 0.3em; text-transform: uppercase; color: var(--muted); animation: pulse 2s infinite; z-index: 10; }
+      .scroll-cta span { width: 1px; height: 40px; background: linear-gradient(to bottom, var(--muted), transparent); }
+      @keyframes pulse { 0%, 100% { opacity: 0.4; transform: translateY(0); } 50% { opacity: 1; transform: translateY(6px); } }
 
       /* ===== VIDEO SECTION ===== */
-      .video-section {
+      .video-section { position: relative; min-height: 200vh; }
+      .video-container { position: sticky; top: 0; width: 100%; height: 100vh; background: #000; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+      .video-element { width: 100%; height: 100%; object-fit: cover; }
+      .video-overlay { position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(0, 0, 0, 0.3) 0%, transparent 15%, transparent 85%, rgba(0, 0, 0, 0.4) 100%); pointer-events: none; }
+      .video-info-card { position: absolute; top: 50%; right: 5%; transform: translateY(-50%); width: min(420px, calc(100% - 3rem)); padding: 2.5rem; background: rgba(255, 255, 255, 0.04); backdrop-filter: blur(40px); -webkit-backdrop-filter: blur(40px); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 24px; z-index: 20; }
+      .video-info-card h2 { font-family: 'Bodoni Moda', serif; font-size: clamp(1.6rem, 3vw, 2.2rem); font-weight: 400; line-height: 1.15; margin-bottom: 1.25rem; color: rgba(255, 255, 255, 0.95); }
+      .video-info-card p { font-size: 0.95rem; font-weight: 300; line-height: 1.8; color: rgba(255, 255, 255, 0.6); }
+      .video-scroll-hint { position: absolute; bottom: 3rem; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 0.75rem; color: rgba(255, 255, 255, 0.5); font-size: 0.75rem; font-weight: 400; letter-spacing: 0.2em; text-transform: uppercase; z-index: 20; }
+      .video-scroll-hint::after { content: ''; width: 40px; height: 1px; background: rgba(255, 255, 255, 0.3); }
+
+      /* ===== METRO CARRIAGES SECTION ===== */
+      .metro-wrapper {
+        height: 400vh;
         position: relative;
-        min-height: 200vh;
+        background: linear-gradient(to bottom, #000000, #080808);
       }
 
-      .video-container {
+      .sticky-container {
         position: sticky;
         top: 0;
-        width: 100%;
         height: 100vh;
-        background: #000;
+        width: 100%;
+        overflow: hidden;
         display: flex;
         align-items: center;
-        justify-content: center;
-        overflow: hidden;
+        /* Adds depth behind the trains */
+        box-shadow: inset 0 0 150px rgba(0,0,0,0.9);
       }
 
-      .video-element {
-        width: 100%;
+      .horizontal-track {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        padding: 0 10vw;
+        height: 60vh; /* Scaled to look like train height */
+        will-change: transform;
+      }
+
+      /* The Train Body */
+      .carriage-card {
+        width: 75vw;
+        max-width: 900px;
         height: 100%;
-        object-fit: cover;
+        flex-shrink: 0;
+        margin-right: 1.5vw; /* Tight coupling */
+        
+        /* Metallic shell styling */
+        background: linear-gradient(180deg, #1f1f1f 0%, #111111 20%, #0a0a0a 100%);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-top: 1px solid rgba(255, 255, 255, 0.15); /* light reflection on roof */
+        border-radius: 40px 40px 15px 15px; /* Aerodynamic top, flatter bottom */
+        
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-start;
+        padding-top: 4vh; /* Pushes window down slightly */
+        position: relative;
+        box-shadow: 
+          inset 0 15px 30px rgba(255,255,255,0.02),
+          0 30px 60px rgba(0,0,0,0.8);
       }
 
-      .video-overlay {
+      /* Maglev Undercarriage */
+      .carriage-card::before {
+        content: '';
         position: absolute;
-        inset: 0;
-        background: linear-gradient(
-          to bottom,
-          rgba(0, 0, 0, 0.3) 0%,
-          transparent 15%,
-          transparent 85%,
-          rgba(0, 0, 0, 0.4) 100%
-        );
-        pointer-events: none;
+        bottom: 0;
+        left: 2%;
+        width: 96%;
+        height: 12%;
+        background: #020202;
+        border-radius: 5px 5px 15px 15px;
+        border-top: 1px solid rgba(74, 144, 226, 0.2);
+        /* The blue levitation glow */
+        box-shadow: 
+          inset 0 5px 10px rgba(0,0,0,1),
+          0 15px 35px rgba(74, 144, 226, 0.15); 
       }
 
-      .video-info-card {
+      /* Minimalist side stripe on the body */
+      .carriage-card::after {
+        content: '';
         position: absolute;
+        bottom: 18%;
+        left: 0;
+        width: 100%;
+        height: 2px;
+        background: rgba(74, 144, 226, 0.3);
+      }
+
+      /* Mechanical Joints between carriages */
+      .carriage-card:not(:last-child) .joint {
+        position: absolute;
+        right: -1.5vw;
         top: 50%;
-        right: 5%;
         transform: translateY(-50%);
-        width: min(420px, calc(100% - 3rem));
-        padding: 2.5rem;
-        background: rgba(255, 255, 255, 0.04);
-        backdrop-filter: blur(40px);
-        -webkit-backdrop-filter: blur(40px);
+        width: 1.5vw;
+        height: 35%;
+        background: linear-gradient(90deg, #111, #222, #111);
+        border-top: 2px solid #333;
+        border-bottom: 2px solid #333;
+        z-index: -1;
+        box-shadow: inset 0 0 10px rgba(0,0,0,0.8);
+      }
+
+      /* The Panoramic Window containing the text */
+      .carriage-window {
+        width: 90%;
+        height: 60%;
+        background: rgba(0, 0, 0, 0.6); /* Dark tinted glass */
         border: 1px solid rgba(255, 255, 255, 0.08);
         border-radius: 24px;
-        z-index: 20;
-      }
-
-      .video-info-card h2 {
-        font-family: 'Bodoni Moda', serif;
-        font-size: clamp(1.6rem, 3vw, 2.2rem);
-        font-weight: 400;
-        line-height: 1.15;
-        margin-bottom: 1.25rem;
-        color: rgba(255, 255, 255, 0.95);
-      }
-
-      .video-info-card p {
-        font-size: 0.95rem;
-        font-weight: 300;
-        line-height: 1.8;
-        color: rgba(255, 255, 255, 0.6);
-      }
-
-      .video-scroll-hint {
-        position: absolute;
-        bottom: 3rem;
-        left: 50%;
-        transform: translateX(-50%);
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-        color: rgba(255, 255, 255, 0.5);
-        font-size: 0.75rem;
-        font-weight: 400;
-        letter-spacing: 0.2em;
-        text-transform: uppercase;
-        z-index: 20;
-      }
-
-      .video-scroll-hint::after {
-        content: '';
-        width: 40px;
-        height: 1px;
-        background: rgba(255, 255, 255, 0.3);
-      }
-
-      /* ===== METRO SECTION ===== */
-      .metro-section {
-        position: relative;
-        padding: 10rem 0;
-        overflow: hidden;
-        background: linear-gradient(to bottom, #050505, #080808);
-      }
-
-      .metro-header {
-        padding: 0 6rem 4rem;
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-end;
-        max-width: 1400px;
-        margin: 0 auto;
-      }
-
-      .metro-header-content {
-        max-width: 600px;
-      }
-
-      .metro-label {
-        font-size: 0.75rem;
-        font-weight: 500;
-        letter-spacing: 0.35em;
-        text-transform: uppercase;
-        color: var(--muted);
-        margin-bottom: 1.5rem;
-      }
-
-      .metro-title {
-        font-family: 'Bodoni Moda', serif;
-        font-size: clamp(2.2rem, 4vw, 3.5rem);
-        font-weight: 300;
-        line-height: 1.1;
-        color: rgba(255, 255, 255, 0.95);
-      }
-
-      .metro-viewport {
-        position: relative;
-        width: 100%;
-        height: 420px;
-        overflow: hidden;
-      }
-
-      .metro-track {
-        position: absolute;
-        left: 6%;
-        top: 50%;
-        transform: translateY(-50%);
-        display: flex;
-        gap: 20px;
-      }
-
-      .metro-car {
-        flex-shrink: 0;
-        width: 340px;
-        height: 280px;
-        padding: 2.5rem;
-        background: rgba(255, 255, 255, 0.03);
-        border: 1px solid rgba(255, 255, 255, 0.06);
-        border-radius: 20px;
         display: flex;
         flex-direction: column;
         justify-content: center;
-        transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1),
-                    background 0.6s ease,
-                    border-color 0.6s ease;
-      }
-
-      .metro-car:hover {
-        transform: translateY(-8px);
-        background: rgba(255, 255, 255, 0.05);
-        border-color: rgba(255, 255, 255, 0.1);
-      }
-
-      .metro-car-title {
-        font-family: 'Bodoni Moda', serif;
-        font-size: 1.35rem;
-        font-weight: 400;
-        color: rgba(255, 255, 255, 0.95);
-        margin-bottom: 1rem;
-      }
-
-      .metro-car-description {
-        font-size: 0.95rem;
-        font-weight: 300;
-        line-height: 1.75;
-        color: rgba(255, 255, 255, 0.5);
-      }
-
-      .metro-fade-left,
-      .metro-fade-right {
-        position: absolute;
-        top: 0;
-        bottom: 0;
-        width: 150px;
-        pointer-events: none;
+        align-items: center;
+        text-align: center;
+        padding: 3rem;
+        position: relative;
         z-index: 10;
+        
+        /* Internal glassmorphism reflection */
+        box-shadow: 
+          inset 0 0 50px rgba(0,0,0,0.9),
+          inset 0 2px 10px rgba(255,255,255,0.03);
+        backdrop-filter: blur(10px);
       }
 
-      .metro-fade-left {
-        left: 0;
-        background: linear-gradient(to right, #050505, transparent);
+      .carriage-title {
+        font-family: 'Bodoni Moda', serif;
+        font-size: clamp(2rem, 3.5vw, 3.5rem);
+        font-weight: 300;
+        line-height: 1.1;
+        margin-bottom: 1.5rem;
+        color: rgba(255, 255, 255, 0.95);
       }
 
-      .metro-fade-right {
-        right: 0;
-        background: linear-gradient(to left, #080808, transparent);
+      .carriage-desc {
+        font-size: 1.1rem;
+        font-weight: 300;
+        line-height: 1.7;
+        color: rgba(255, 255, 255, 0.6);
+        max-width: 85%;
       }
 
       /* ===== RESPONSIVE ===== */
-      @media (max-width: 1024px) {
-        .hero {
-          padding: 6rem 4rem;
-        }
-
-        .metro-header {
-          padding: 0 4rem 3rem;
-        }
-
-        .metro-track {
-          left: 4%;
-        }
-      }
-
       @media (max-width: 768px) {
-        .hero {
-          padding: 5rem 2rem;
-        }
-
-        .hero-logo-bg {
-          font-size: clamp(8rem, 20vw, 12rem);
-          left: -8%;
-        }
-
-        .video-info-card {
-          right: 1.5rem;
-          left: 1.5rem;
-          top: auto;
-          bottom: 6rem;
-          transform: none;
-          width: auto;
-          padding: 2rem;
-        }
-
-        .metro-header {
-          padding: 0 2rem 2.5rem;
-          flex-direction: column;
-          align-items: flex-start;
-        }
-
-        .metro-track {
-          left: 2rem;
-          gap: 16px;
-        }
-
-        .metro-car {
-          width: 300px;
-          height: 260px;
-          padding: 2rem;
-        }
-      }
-
-      @media (max-width: 480px) {
-        .splash-content {
-          padding: 2rem;
-        }
-
-        .hero {
-          padding: 4rem 1.5rem;
-        }
-
-        .video-info-card {
-          bottom: 5rem;
-          padding: 1.75rem;
-        }
-
-        .metro-track {
-          left: 1.5rem;
-        }
-
-        .metro-car {
-          width: 280px;
-          padding: 1.75rem;
-        }
+        .hero { padding: 5rem 2rem; }
+        .hero-logo-bg { font-size: clamp(6rem, 15vw, 10rem); }
+        .video-info-card { right: 1.5rem; left: 1.5rem; top: auto; bottom: 6rem; transform: none; width: auto; padding: 2rem; }
+        
+        .horizontal-track { height: 75vh; }
+        .carriage-card { width: 88vw; padding-top: 3vh; margin-right: 3vw; }
+        .carriage-window { width: 92%; height: 70%; padding: 2rem 1.5rem; }
+        .carriage-card:not(:last-child) .joint { right: -3vw; width: 3vw; }
+        .carriage-desc { max-width: 100%; font-size: 1rem; }
       }
     </style>
   </head>
   <body class="loading">
-    <!-- Splash Screen -->
     <div class="splash" id="splash">
       <div class="splash-glow splash-glow-1"></div>
       <div class="splash-glow splash-glow-2"></div>
       <div class="splash-orb splash-orb-1"></div>
       <div class="splash-orb splash-orb-2"></div>
       <div class="splash-orb splash-orb-3"></div>
-
       <div class="splash-content">
         <div class="splash-video-container">
           <video class="splash-video" id="splash-video" autoplay muted playsinline loop>
@@ -560,81 +253,111 @@
       </div>
     </div>
 
-    <!-- Main Content -->
     <main class="main" id="main">
-      <!-- Hero Section -->
       <section class="hero">
-        <div class="hero-logo-bg">MAKE IT</div>
+        <div class="hero-logo-bg">NEXUS</div>
         <div class="hero-content">
-          <span class="hero-label">Quiet Product Direction</span>
-          <h1 class="hero-title">Premium minimalism expressed through motion and craftsmanship.</h1>
-          <p class="hero-description">We create calm digital experiences that feel purposeful, luxurious, and effortless. Every detail is designed to be quietly memorable.</p>
+          <span class="hero-label">Next-Gen Transit</span>
+          <div class="hero-title-container">
+            <h1 class="hero-title" id="nexus-title">METRO NEXUS</h1>
+          </div>
+          <div class="maglev-graphic"></div>
+        </div>
+        <div class="scroll-cta">
+          Scroll to Explore
+          <span></span>
         </div>
       </section>
 
-      <!-- Video Section -->
       <section class="video-section" id="video-section">
         <div class="video-container">
           <video class="video-element" id="scroll-video" autoplay muted playsinline preload="auto" poster="metro.png">
             <source src="scroll.mp4" type="video/mp4" />
           </video>
           <div class="video-overlay"></div>
-
           <div class="video-info-card" id="video-card">
             <h2>Scroll-driven motion, grounded in restraint.</h2>
             <p>Glassmorphism and soft depth keep the information light while preserving the immersive video experience. The card floats over the frame with elegant clarity.</p>
           </div>
-
           <div class="video-scroll-hint">Scroll to explore</div>
         </div>
       </section>
 
-      <!-- Metro Section -->
-      <section class="metro-section">
-        <div class="metro-header">
-          <div class="metro-header-content">
-            <span class="metro-label">Metro Showcase</span>
-            <h2 class="metro-title">Train motion revealed with elegant scroll refinement.</h2>
-          </div>
-        </div>
+      <section class="metro-wrapper">
+        <div class="sticky-container">
+          <div class="horizontal-track">
+            
+            <div class="carriage-card">
+              <div class="carriage-window">
+                <h2 class="carriage-title">Seamless Boarding</h2>
+                <p class="carriage-desc">Retina-scan entry. Zero physical tickets. AI-driven automatic tracking and payment.</p>
+              </div>
+              <div class="joint"></div>
+            </div>
 
-        <div class="metro-viewport">
-          <div class="metro-fade-left"></div>
-          <div class="metro-fade-right"></div>
+            <div class="carriage-card">
+              <div class="carriage-window">
+                <h2 class="carriage-title">AR Journey Mapping</h2>
+                <p class="carriage-desc">Sync your Smart Glasses. Input your destination to view tourist spots and workspaces en route. AI groups passengers logically.</p>
+              </div>
+              <div class="joint"></div>
+            </div>
 
-          <div class="metro-track" id="metro-track">
-            <div class="metro-car">
-              <h3 class="metro-car-title">AI Navigation</h3>
-              <p class="metro-car-description">Dynamic routing that feels intelligent and intuitive for every commute.</p>
+            <div class="carriage-card">
+              <div class="carriage-window">
+                <h2 class="carriage-title">Sentient Routing</h2>
+                <p class="carriage-desc">Check-in at the station, and your phone instantly receives your optimal auto-generated route.</p>
+              </div>
+              <div class="joint"></div>
             </div>
-            <div class="metro-car">
-              <h3 class="metro-car-title">Smart Tickets</h3>
-              <p class="metro-car-description">Seamless payment and ticketing designed for modern transit lifestyles.</p>
+
+            <div class="carriage-card">
+              <div class="carriage-window">
+                <h2 class="carriage-title">Predictive Experience</h2>
+                <p class="carriage-desc">Metro Nexus learns. Our AI anticipates peak times, auto-reserves seating, and adjusts cabin scenery to match rider moods.</p>
+              </div>
+              <div class="joint"></div>
             </div>
-            <div class="metro-car">
-              <h3 class="metro-car-title">Sustainability</h3>
-              <p class="metro-car-description">Thoughtful energy efficiency and materials create a more responsible journey.</p>
+
+            <div class="carriage-card">
+              <div class="carriage-window">
+                <h2 class="carriage-title">Infinite Power</h2>
+                <p class="carriage-desc">No grid reliance. Maglev propulsion powered entirely by piezoelectric tiles absorbing kinetic energy.</p>
+              </div>
+              <div class="joint"></div>
             </div>
-            <div class="metro-car">
-              <h3 class="metro-car-title">Live Crowd Data</h3>
-              <p class="metro-car-description">Real-time occupancy insights help passengers move with less friction.</p>
+
+            <div class="carriage-card">
+              <div class="carriage-window">
+                <h2 class="carriage-title">Double-Decker Comfort</h2>
+                <p class="carriage-desc">Spacious, double-tier seating maximizing capacity without compromising personal space.</p>
+              </div>
+              <div class="joint"></div>
             </div>
-            <div class="metro-car">
-              <h3 class="metro-car-title">Personalized Routes</h3>
-              <p class="metro-car-description">Adaptive path options tailored to daily habits and momentary preferences.</p>
+
+            <div class="carriage-card">
+              <div class="carriage-window">
+                <h2 class="carriage-title">Parallel Transfers</h2>
+                <p class="carriage-desc">Never stop moving. Direct metro-to-metro boarding with extending platforms between parallel trains at full speed.</p>
+              </div>
+              <div class="joint"></div>
             </div>
-            <div class="metro-car">
-              <h3 class="metro-car-title">Metro Commerce</h3>
-              <p class="metro-car-description">Onboard retail and services that feel natural, not intrusive.</p>
+
+            <div class="carriage-card">
+              <div class="carriage-window">
+                <h2 class="carriage-title">Color Travelators</h2>
+                <p class="carriage-desc">Don't walk. High-speed, color-coded travelators transport you exactly where you need to be within the station.</p>
+              </div>
+              <div class="joint"></div>
             </div>
-            <div class="metro-car">
-              <h3 class="metro-car-title">Accessibility</h3>
-              <p class="metro-car-description">Design that welcomes every rider with clarity and generous support.</p>
+
+            <div class="carriage-card">
+              <div class="carriage-window">
+                <h2 class="carriage-title">The Omniscient Log</h2>
+                <p class="carriage-desc">A secure, centralized database optimizing city flow by analyzing macro travel patterns and logs.</p>
+              </div>
             </div>
-            <div class="metro-car">
-              <h3 class="metro-car-title">Future Mobility</h3>
-              <p class="metro-car-description">A forward-looking transit system built for the next era of urban life.</p>
-            </div>
+
           </div>
         </div>
       </section>
@@ -645,6 +368,18 @@
     <script>
       gsap.registerPlugin(ScrollTrigger);
 
+      // --- Setup Title Text Splitting (FIXED) ---
+      const title = document.getElementById('nexus-title');
+      const text = title.textContent; // Using textContent instead of innerText
+      title.innerHTML = '';
+      text.split('').forEach(char => {
+        const span = document.createElement('span');
+        span.className = 'char';
+        span.textContent = char === ' ' ? '\u00A0' : char; 
+        title.appendChild(span);
+      });
+
+      // --- Variables ---
       const splash = document.getElementById('splash');
       const main = document.getElementById('main');
       const loaderBar = document.getElementById('loader-bar');
@@ -654,66 +389,17 @@
       const splashTagline = document.querySelector('.splash-tagline');
       const splashPercentage = document.querySelector('.splash-percentage');
 
-      // Splash animations
-      const splashTL = gsap.timeline({
-        onComplete: initPage
-      });
+      // --- Splash Animations ---
+      const splashTL = gsap.timeline({ onComplete: initPage });
 
-      // Initial glow pulse
-      splashTL.to('.splash-glow-1', {
-        opacity: 1,
-        scale: 1.2,
-        duration: 2,
-        ease: 'power2.out'
-      }, 0);
-
-      splashTL.to('.splash-glow-2', {
-        opacity: 0.8,
-        scale: 1.1,
-        duration: 2.5,
-        ease: 'power2.out'
-      }, 0.2);
-
-      // Video container entrance
-      splashTL.to('.splash-video-container', {
-        opacity: 1,
-        scale: 1,
-        duration: 1.6,
-        ease: 'power3.out'
-      }, 0.2);
-
-      // Logo entrance
-      splashTL.to(splashLogo, {
-        opacity: 1,
-        y: 0,
-        scale: 1,
-        duration: 1.4,
-        ease: 'power3.out'
-      }, 0.5);
-
-      // Tagline
-      splashTL.to(splashTagline, {
-        opacity: 1,
-        y: 0,
-        duration: 1,
-        ease: 'power2.out'
-      }, 0.75);
-
-      // Loader bar container
-      splashTL.to(splashLoader, {
-        opacity: 1,
-        duration: 0.6,
-        ease: 'power2.out'
-      }, 0.95);
-
-      // Percentage
-      splashTL.to(splashPercentage, {
-        opacity: 1,
-        duration: 0.6,
-        ease: 'power2.out'
-      }, 1.05);
-
-      // Progress bar animation
+      splashTL.to('.splash-glow-1', { opacity: 1, scale: 1.2, duration: 2, ease: 'power2.out' }, 0);
+      splashTL.to('.splash-glow-2', { opacity: 0.8, scale: 1.1, duration: 2.5, ease: 'power2.out' }, 0.2);
+      splashTL.to('.splash-video-container', { opacity: 1, scale: 1, duration: 1.6, ease: 'power3.out' }, 0.2);
+      splashTL.to(splashLogo, { opacity: 1, y: 0, scale: 1, duration: 1.4, ease: 'power3.out' }, 0.5);
+      splashTL.to(splashTagline, { opacity: 1, y: 0, duration: 1, ease: 'power2.out' }, 0.75);
+      splashTL.to(splashLoader, { opacity: 1, duration: 0.6, ease: 'power2.out' }, 0.95);
+      splashTL.to(splashPercentage, { opacity: 1, duration: 0.6, ease: 'power2.out' }, 1.05);
+      
       splashTL.to(loaderBar, {
         width: '100%',
         duration: 2.5,
@@ -724,45 +410,15 @@
         }
       }, 1.15);
 
-      // Orb animations (continuous)
       function animateOrbs() {
-        gsap.to('.splash-orb-1', {
-          y: -20,
-          opacity: 0.5,
-          duration: 3,
-          ease: 'sine.inOut',
-          repeat: -1,
-          yoyo: true
-        });
-
-        gsap.to('.splash-orb-2', {
-          y: 15,
-          x: 10,
-          opacity: 0.4,
-          duration: 4,
-          ease: 'sine.inOut',
-          repeat: -1,
-          yoyo: true,
-          delay: 0.5
-        });
-
-        gsap.to('.splash-orb-3', {
-          y: -12,
-          x: -8,
-          opacity: 0.3,
-          duration: 3.5,
-          ease: 'sine.inOut',
-          repeat: -1,
-          yoyo: true,
-          delay: 1
-        });
+        gsap.to('.splash-orb-1', { y: -20, opacity: 0.5, duration: 3, ease: 'sine.inOut', repeat: -1, yoyo: true });
+        gsap.to('.splash-orb-2', { y: 15, x: 10, opacity: 0.4, duration: 4, ease: 'sine.inOut', repeat: -1, yoyo: true, delay: 0.5 });
+        gsap.to('.splash-orb-3', { y: -12, x: -8, opacity: 0.3, duration: 3.5, ease: 'sine.inOut', repeat: -1, yoyo: true, delay: 1 });
       }
-
       animateOrbs();
 
-      // Initialize main page after splash
+      // --- Initialize Main Page ---
       function initPage() {
-        // Fade out splash
         gsap.to(splash, {
           opacity: 0,
           duration: 0.8,
@@ -773,92 +429,41 @@
           }
         });
 
-        // Show main content
         gsap.to(main, {
           opacity: 1,
           duration: 1,
           ease: 'power2.out',
-          onStart: () => {
-            main.classList.add('visible');
-          }
+          onStart: () => { main.classList.add('visible'); }
         });
 
-        // Hero animations
-        gsap.from('.hero-logo-bg', {
-          opacity: 0,
-          x: -100,
-          duration: 2,
-          ease: 'power3.out',
-          delay: 0.3
+        // Hero Animations
+        gsap.from('.hero-logo-bg', { opacity: 0, x: -100, duration: 2, ease: 'power3.out', delay: 0.3 });
+        gsap.from('.hero-label', { opacity: 0, y: 30, duration: 1, ease: 'power3.out', delay: 0.5 });
+        
+        gsap.to('.hero-title .char', {
+          y: 0, opacity: 1, duration: 1, stagger: 0.05, ease: 'power3.out', delay: 0.6
         });
 
-        gsap.from('.hero-label', {
-          opacity: 0,
-          y: 30,
-          duration: 1,
-          ease: 'power3.out',
-          delay: 0.5
-        });
+        gsap.to('.maglev-graphic', { opacity: 1, duration: 1.5, ease: 'power2.out', delay: 1.2 });
 
-        gsap.from('.hero-title', {
-          opacity: 0,
-          y: 50,
-          duration: 1.2,
-          ease: 'power3.out',
-          delay: 0.65
-        });
-
-        gsap.from('.hero-description', {
-          opacity: 0,
-          y: 40,
-          duration: 1,
-          ease: 'power3.out',
-          delay: 0.85
-        });
-
-        // Initialize scroll video
         initScrollVideo();
+        initHorizontalScroll();
 
-        // Initialize metro scroll
-        initMetroScroll();
-
-        // Video card animation
         gsap.from('.video-info-card', {
-          scrollTrigger: {
-            trigger: '.video-section',
-            start: 'top 60%',
-            end: 'center center',
-            scrub: 1
-          },
-          opacity: 0,
-          y: 60,
-          ease: 'power2.out'
-        });
-
-        // Metro header animation
-        gsap.from('.metro-header', {
-          scrollTrigger: {
-            trigger: '.metro-section',
-            start: 'top 80%'
-          },
-          opacity: 0,
-          y: 40,
-          duration: 1,
-          ease: 'power3.out'
+          scrollTrigger: { trigger: '.video-section', start: 'top 60%', end: 'center center', scrub: 1 },
+          opacity: 0, y: 60, ease: 'power2.out'
         });
       }
 
-      // Scroll Video Controller
+      // --- Scroll Video Controller ---
       function initScrollVideo() {
         const video = document.getElementById('scroll-video');
         const videoSection = document.getElementById('video-section');
-
         let videoReady = false;
         let rafId = null;
 
         function syncVideo() {
           if (!videoReady) return;
-
           const duration = video.duration;
           if (!duration || isNaN(duration)) return;
 
@@ -873,11 +478,9 @@
           const progress = Math.max(0, Math.min(1, (scrollTop - start) / (end - start)));
 
           const targetTime = progress * (duration - 0.05);
-
           if (Math.abs(video.currentTime - targetTime) > 0.02) {
             video.currentTime = targetTime;
           }
-
           rafId = null;
         }
 
@@ -889,16 +492,12 @@
         function onVideoReady() {
           if (videoReady) return;
           videoReady = true;
-
           video.pause();
           video.currentTime = 0;
-
           const scrollDuration = Math.max(1800, Math.ceil(video.duration * 180));
           videoSection.style.minHeight = scrollDuration + 'px';
-
           window.addEventListener('scroll', requestSync, { passive: true });
           window.addEventListener('resize', requestSync);
-
           requestSync();
         }
 
@@ -910,42 +509,26 @@
         }
       }
 
-      // Metro horizontal scroll
-      function initMetroScroll() {
-        const track = document.getElementById('metro-track');
-        const section = document.querySelector('.metro-section');
-
-        const trackWidth = track.scrollWidth;
-        const viewportWidth = window.innerWidth;
-        const travelDistance = Math.max(0, trackWidth - viewportWidth + 150);
+      // --- Horizontal Scroll Logic ---
+      function initHorizontalScroll() {
+        const track = document.querySelector('.horizontal-track');
+        const wrapper = document.querySelector('.metro-wrapper');
+        
+        const getScrollAmount = () => -(track.scrollWidth - window.innerWidth);
 
         gsap.to(track, {
-          x: -travelDistance,
-          ease: 'none',
+          x: getScrollAmount,
+          ease: "none", 
           scrollTrigger: {
-            trigger: section,
-            start: 'top top',
-            end: () => '+=' + (trackWidth + 300),
-            scrub: 0.8,
-            pin: false
+            trigger: wrapper,
+            start: "top top",
+            end: "bottom bottom", 
+            scrub: 0.5, 
+            invalidateOnRefresh: true 
           }
-        });
-
-        // Stagger car animations
-        gsap.from('.metro-car', {
-          scrollTrigger: {
-            trigger: section,
-            start: 'top 85%'
-          },
-          y: 50,
-          opacity: 0,
-          duration: 0.8,
-          ease: 'power2.out',
-          stagger: 0.1
         });
       }
 
-      // Refresh ScrollTrigger on load
       window.addEventListener('load', () => {
         ScrollTrigger.refresh();
       });
