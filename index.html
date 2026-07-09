@@ -83,7 +83,7 @@
       .metro-wrapper {
         height: 400vh;
         position: relative;
-        background: linear-gradient(to bottom, #000000, #080808);
+        background: #000;
       }
 
       .sticky-container {
@@ -94,125 +94,73 @@
         overflow: hidden;
         display: flex;
         align-items: center;
-        /* Adds depth behind the trains */
-        box-shadow: inset 0 0 150px rgba(0,0,0,0.9);
+        background: #050505;
       }
 
       .horizontal-track {
         display: flex;
         flex-direction: row;
         align-items: center;
-        padding: 0 10vw;
-        height: 60vh; /* Scaled to look like train height */
+        padding: 0 5vw; 
+        height: 70vh; /* Provides a solid height for the side-scroller */
         will-change: transform;
       }
 
-      /* The Train Body */
       .carriage-card {
-        width: 75vw;
-        max-width: 900px;
         height: 100%;
+        aspect-ratio: 16 / 9; /* CRITICAL: Locks dimensions so the image never crops */
         flex-shrink: 0;
-        margin-right: 1.5vw; /* Tight coupling */
+        margin-right: 4vw; 
         
-        /* Metallic shell styling */
-        background: linear-gradient(180deg, #1f1f1f 0%, #111111 20%, #0a0a0a 100%);
-        border: 1px solid rgba(255, 255, 255, 0.05);
-        border-top: 1px solid rgba(255, 255, 255, 0.15); /* light reflection on roof */
-        border-radius: 40px 40px 15px 15px; /* Aerodynamic top, flatter bottom */
+        background-image: url('carriage.png');
+        background-size: 100% 100%; /* Fits perfectly into the locked aspect ratio */
+        background-position: center;
+        background-repeat: no-repeat;
+        border-radius: 12px;
         
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: flex-start;
-        padding-top: 4vh; /* Pushes window down slightly */
-        position: relative;
-        box-shadow: 
-          inset 0 15px 30px rgba(255,255,255,0.02),
-          0 30px 60px rgba(0,0,0,0.8);
+        position: relative; /* Allows absolute positioning of the window */
+        box-shadow: 0 20px 50px rgba(0,0,0,0.8);
       }
 
-      /* Maglev Undercarriage */
-      .carriage-card::before {
-        content: '';
-        position: absolute;
-        bottom: 0;
-        left: 2%;
-        width: 96%;
-        height: 12%;
-        background: #020202;
-        border-radius: 5px 5px 15px 15px;
-        border-top: 1px solid rgba(74, 144, 226, 0.2);
-        /* The blue levitation glow */
-        box-shadow: 
-          inset 0 5px 10px rgba(0,0,0,1),
-          0 15px 35px rgba(74, 144, 226, 0.15); 
-      }
-
-      /* Minimalist side stripe on the body */
-      .carriage-card::after {
-        content: '';
-        position: absolute;
-        bottom: 18%;
-        left: 0;
-        width: 100%;
-        height: 2px;
-        background: rgba(74, 144, 226, 0.3);
-      }
-
-      /* Mechanical Joints between carriages */
-      .carriage-card:not(:last-child) .joint {
-        position: absolute;
-        right: -1.5vw;
-        top: 50%;
-        transform: translateY(-50%);
-        width: 1.5vw;
-        height: 35%;
-        background: linear-gradient(90deg, #111, #222, #111);
-        border-top: 2px solid #333;
-        border-bottom: 2px solid #333;
-        z-index: -1;
-        box-shadow: inset 0 0 10px rgba(0,0,0,0.8);
-      }
-
-      /* The Panoramic Window containing the text */
       .carriage-window {
-        width: 90%;
-        height: 60%;
-        background: rgba(0, 0, 0, 0.6); /* Dark tinted glass */
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        border-radius: 24px;
+        position: absolute;
+        /* Pinning the text perfectly over the black screen in your image */
+        top: 11%;     
+        left: 17%;    
+        width: 66%;   
+        height: 48%;  
+        
         display: flex;
         flex-direction: column;
         justify-content: center;
         align-items: center;
         text-align: center;
-        padding: 3rem;
-        position: relative;
+        padding: 1rem 4rem;
         z-index: 10;
         
-        /* Internal glassmorphism reflection */
-        box-shadow: 
-          inset 0 0 50px rgba(0,0,0,0.9),
-          inset 0 2px 10px rgba(255,255,255,0.03);
-        backdrop-filter: blur(10px);
+        /* Subtle glass effect to help text pop against the black */
+        background: rgba(255, 255, 255, 0.02);
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
+        border-radius: 12px;
       }
 
       .carriage-title {
         font-family: 'Bodoni Moda', serif;
-        font-size: clamp(2rem, 3.5vw, 3.5rem);
+        font-size: clamp(1.8rem, 3vw, 3.5rem);
         font-weight: 300;
         line-height: 1.1;
-        margin-bottom: 1.5rem;
+        margin-bottom: 1rem;
         color: rgba(255, 255, 255, 0.95);
+        text-shadow: 0 4px 20px rgba(0,0,0,0.8);
       }
 
       .carriage-desc {
-        font-size: 1.1rem;
+        font-size: clamp(0.9rem, 1.2vw, 1.2rem);
         font-weight: 300;
-        line-height: 1.7;
-        color: rgba(255, 255, 255, 0.6);
-        max-width: 85%;
+        line-height: 1.6;
+        color: rgba(255, 255, 255, 0.7);
+        text-shadow: 0 2px 10px rgba(0,0,0,0.8);
       }
 
       /* ===== RESPONSIVE ===== */
@@ -221,11 +169,10 @@
         .hero-logo-bg { font-size: clamp(6rem, 15vw, 10rem); }
         .video-info-card { right: 1.5rem; left: 1.5rem; top: auto; bottom: 6rem; transform: none; width: auto; padding: 2rem; }
         
-        .horizontal-track { height: 75vh; }
-        .carriage-card { width: 88vw; padding-top: 3vh; margin-right: 3vw; }
-        .carriage-window { width: 92%; height: 70%; padding: 2rem 1.5rem; }
-        .carriage-card:not(:last-child) .joint { right: -3vw; width: 3vw; }
-        .carriage-desc { max-width: 100%; font-size: 1rem; }
+        /* Scale down the entire train track height for mobile so it fits on screen */
+        .horizontal-track { height: 40vh; padding: 0 10vw; } 
+        .carriage-card { margin-right: 8vw; }
+        .carriage-window { padding: 0.5rem 1.5rem; }
       }
     </style>
   </head>
@@ -292,7 +239,6 @@
                 <h2 class="carriage-title">Seamless Boarding</h2>
                 <p class="carriage-desc">Retina-scan entry. Zero physical tickets. AI-driven automatic tracking and payment.</p>
               </div>
-              <div class="joint"></div>
             </div>
 
             <div class="carriage-card">
@@ -300,7 +246,6 @@
                 <h2 class="carriage-title">AR Journey Mapping</h2>
                 <p class="carriage-desc">Sync your Smart Glasses. Input your destination to view tourist spots and workspaces en route. AI groups passengers logically.</p>
               </div>
-              <div class="joint"></div>
             </div>
 
             <div class="carriage-card">
@@ -308,7 +253,6 @@
                 <h2 class="carriage-title">Sentient Routing</h2>
                 <p class="carriage-desc">Check-in at the station, and your phone instantly receives your optimal auto-generated route.</p>
               </div>
-              <div class="joint"></div>
             </div>
 
             <div class="carriage-card">
@@ -316,7 +260,6 @@
                 <h2 class="carriage-title">Predictive Experience</h2>
                 <p class="carriage-desc">Metro Nexus learns. Our AI anticipates peak times, auto-reserves seating, and adjusts cabin scenery to match rider moods.</p>
               </div>
-              <div class="joint"></div>
             </div>
 
             <div class="carriage-card">
@@ -324,7 +267,6 @@
                 <h2 class="carriage-title">Infinite Power</h2>
                 <p class="carriage-desc">No grid reliance. Maglev propulsion powered entirely by piezoelectric tiles absorbing kinetic energy.</p>
               </div>
-              <div class="joint"></div>
             </div>
 
             <div class="carriage-card">
@@ -332,7 +274,6 @@
                 <h2 class="carriage-title">Double-Decker Comfort</h2>
                 <p class="carriage-desc">Spacious, double-tier seating maximizing capacity without compromising personal space.</p>
               </div>
-              <div class="joint"></div>
             </div>
 
             <div class="carriage-card">
@@ -340,7 +281,6 @@
                 <h2 class="carriage-title">Parallel Transfers</h2>
                 <p class="carriage-desc">Never stop moving. Direct metro-to-metro boarding with extending platforms between parallel trains at full speed.</p>
               </div>
-              <div class="joint"></div>
             </div>
 
             <div class="carriage-card">
@@ -348,7 +288,6 @@
                 <h2 class="carriage-title">Color Travelators</h2>
                 <p class="carriage-desc">Don't walk. High-speed, color-coded travelators transport you exactly where you need to be within the station.</p>
               </div>
-              <div class="joint"></div>
             </div>
 
             <div class="carriage-card">
@@ -368,9 +307,9 @@
     <script>
       gsap.registerPlugin(ScrollTrigger);
 
-      // --- Setup Title Text Splitting (FIXED) ---
+      // --- Setup Title Text Splitting ---
       const title = document.getElementById('nexus-title');
-      const text = title.textContent; // Using textContent instead of innerText
+      const text = title.textContent; 
       title.innerHTML = '';
       text.split('').forEach(char => {
         const span = document.createElement('span');
