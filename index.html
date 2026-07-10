@@ -1,954 +1,718 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Make It</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Asimovian&family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..900;1,6..96,400..900&display=swap" rel="stylesheet">
-    <style>
-      :root {
-        color-scheme: dark;
-        --bg: #050505;
-        --surface: rgba(255, 255, 255, 0.06);
-        --text: #f5f5f5;
-        --muted: #999999;
-        --border: rgba(255, 255, 255, 0.1);
-      }
-
-      * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-      }
-
-      html {
-        scroll-behavior: smooth;
-      }
-
-      body {
-        font-family: 'Asimovian', -apple-system, BlinkMacSystemFont, sans-serif;
-        background: var(--bg);
-        color: var(--text);
-        overflow-x: hidden;
-        line-height: 1.5;
-        -webkit-font-smoothing: antialiased;
-        -moz-osx-font-smoothing: grayscale;
-      }
-
-      body.loading {
-        overflow: hidden;
-      }
-
-      /* ===== SPLASH SCREEN ===== */
-      .splash {
-        position: fixed;
-        inset: 0;
-        z-index: 10000;
-        background: #030303;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        overflow: hidden;
-      }
-
-      .splash-glow {
-        position: absolute;
-        width: 600px;
-        height: 600px;
-        border-radius: 50%;
-        background: radial-gradient(circle, rgba(255, 255, 255, 0.04) 0%, transparent 70%);
-        pointer-events: none;
-        filter: blur(80px);
-      }
-
-      .splash-glow-1 {
-        top: 20%;
-        left: 30%;
-        transform: translate(-50%, -50%);
-      }
-
-      .splash-glow-2 {
-        bottom: 30%;
-        right: 20%;
-        transform: translate(50%, 50%);
-      }
-
-      .splash-orb {
-        position: absolute;
-        border-radius: 50%;
-        pointer-events: none;
-      }
-
-      .splash-orb-1 {
-        width: 4px;
-        height: 4px;
-        background: rgba(255, 255, 255, 0.3);
-        top: 25%;
-        left: 20%;
-      }
-
-      .splash-orb-2 {
-        width: 3px;
-        height: 3px;
-        background: rgba(255, 255, 255, 0.2);
-        top: 60%;
-        right: 25%;
-      }
-
-      .splash-orb-3 {
-        width: 5px;
-        height: 5px;
-        background: rgba(255, 255, 255, 0.15);
-        bottom: 25%;
-        left: 35%;
-      }
-
-      .splash-content {
-        position: relative;
-        z-index: 10;
-        text-align: center;
-        padding: 3rem;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-      }
-
-      .splash-video-container {
-        width: min(400px, 80vw);
-        height: min(400px, 80vw);
-        border-radius: 50%;
-        overflow: hidden;
-        margin-bottom: 2rem;
-        opacity: 0;
-        transform: scale(0.9);
-        box-shadow: 0 0 80px rgba(255, 255, 255, 0.1);
-      }
-
-      .splash-video {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-      }
-
-      .splash-logo-container {
-        position: relative;
-        margin-bottom: 2.5rem;
-      }
-
-      .splash-logo {
-        font-family: 'Bodoni Moda', serif;
-        font-size: clamp(2.5rem, 8vw, 4rem);
-        font-weight: 700;
-        letter-spacing: 0.2em;
-        text-transform: uppercase;
-        color: rgba(255, 255, 255, 0.95);
-        opacity: 0;
-        transform: translateY(20px);
-      }
-
-      .splash-tagline {
-        font-size: 0.9rem;
-        font-weight: 300;
-        color: var(--muted);
-        letter-spacing: 0.15em;
-        text-transform: uppercase;
-        margin-bottom: 3rem;
-        opacity: 0;
-      }
-
-      .splash-loader {
-        width: 200px;
-        height: 2px;
-        background: rgba(255, 255, 255, 0.08);
-        border-radius: 2px;
-        margin: 0 auto;
-        overflow: hidden;
-          opacity: 0;
-      }
-
-      .splash-loader-bar {
-        width: 0%;
-        height: 100%;
-        background: linear-gradient(90deg, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.9));
-        border-radius: 2px;
-      }
-
-      .splash-percentage {
-        margin-top: 1.5rem;
-        font-size: 0.75rem;
-        font-weight: 400;
-        color: rgba(255, 255, 255, 0.4);
-        letter-spacing: 0.3em;
-        opacity: 0;
-      }
-
-      /* ===== MAIN CONTENT ===== */
-      .main {
-        opacity: 0;
-        visibility: hidden;
-      }
-
-      .main.visible {
-        opacity: 1;
-        visibility: visible;
-      }
-
-      /* ===== HERO SECTION ===== */
-      .hero {
-        min-height: 100vh;
-        position: relative;
-        display: flex;
-        align-items: center;
-        padding: 8rem 6rem;
-        overflow: hidden;
-      }
-
-      .hero-logo-bg {
-        position: absolute;
-        font-family: 'Bodoni Moda', serif;
-        font-size: clamp(12rem, 28vw, 26rem);
-        font-weight: 900;
-        color: rgba(255, 255, 255, 0.03);
-        letter-spacing: -0.05em;
-        white-space: nowrap;
-        left: -5%;
-        top: 50%;
-        transform: translateY(-50%);
-        user-select: none;
-        pointer-events: none;
-        z-index: 0;
-      }
-
-      .hero-content {
-        position: relative;
-        z-index: 10;
-        max-width: 800px;
-      }
-
-      .hero-label {
-        font-size: 0.75rem;
-        font-weight: 500;
-        letter-spacing: 0.35em;
-        text-transform: uppercase;
-        color: var(--muted);
-        margin-bottom: 2rem;
-      }
-
-      .hero-title {
-        font-family: 'Bodoni Moda', serif;
-        font-size: clamp(2.8rem, 5.5vw, 4.8rem);
-        font-weight: 300;
-        line-height: 1.08;
-        letter-spacing: -0.03em;
-        margin-bottom: 2rem;
-        color: rgba(255, 255, 255, 0.95);
-      }
-
-      .hero-description {
-        font-size: 1.05rem;
-        font-weight: 300;
-        line-height: 1.85;
-        color: rgba(255, 255, 255, 0.55);
-        max-width: 560px;
-      }
-
-      /* ===== VIDEO SECTION ===== */
-      .video-section {
-        position: relative;
-        min-height: 200vh;
-      }
-
-      .video-container {
-        position: sticky;
-        top: 0;
-        width: 100%;
-        height: 100vh;
-        background: #000;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        overflow: hidden;
-      }
-
-      .video-element {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-      }
-
-      .video-overlay {
-        position: absolute;
-        inset: 0;
-        background: linear-gradient(
-          to bottom,
-          rgba(0, 0, 0, 0.3) 0%,
-          transparent 15%,
-          transparent 85%,
-          rgba(0, 0, 0, 0.4) 100%
-        );
-        pointer-events: none;
-      }
-
-      .video-info-card {
-        position: absolute;
-        top: 50%;
-        right: 5%;
-        transform: translateY(-50%);
-        width: min(420px, calc(100% - 3rem));
-        padding: 2.5rem;
-        background: rgba(255, 255, 255, 0.04);
-        backdrop-filter: blur(40px);
-        -webkit-backdrop-filter: blur(40px);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        border-radius: 24px;
-        z-index: 20;
-      }
-
-      .video-info-card h2 {
-        font-family: 'Bodoni Moda', serif;
-        font-size: clamp(1.6rem, 3vw, 2.2rem);
-        font-weight: 400;
-        line-height: 1.15;
-        margin-bottom: 1.25rem;
-        color: rgba(255, 255, 255, 0.95);
-      }
-
-      .video-info-card p {
-        font-size: 0.95rem;
-        font-weight: 300;
-        line-height: 1.8;
-        color: rgba(255, 255, 255, 0.6);
-      }
-
-      .video-scroll-hint {
-        position: absolute;
-        bottom: 3rem;
-        left: 50%;
-        transform: translateX(-50%);
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-        color: rgba(255, 255, 255, 0.5);
-        font-size: 0.75rem;
-        font-weight: 400;
-        letter-spacing: 0.2em;
-        text-transform: uppercase;
-        z-index: 20;
-      }
-
-      .video-scroll-hint::after {
-        content: '';
-        width: 40px;
-        height: 1px;
-        background: rgba(255, 255, 255, 0.3);
-      }
-
-      /* ===== METRO SECTION ===== */
-      .metro-section {
-        position: relative;
-        padding: 10rem 0;
-        overflow: hidden;
-        background: linear-gradient(to bottom, #050505, #080808);
-      }
-
-      .metro-header {
-        padding: 0 6rem 4rem;
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-end;
-        max-width: 1400px;
-        margin: 0 auto;
-      }
-
-      .metro-header-content {
-        max-width: 600px;
-      }
-
-      .metro-label {
-        font-size: 0.75rem;
-        font-weight: 500;
-        letter-spacing: 0.35em;
-        text-transform: uppercase;
-        color: var(--muted);
-        margin-bottom: 1.5rem;
-      }
-
-      .metro-title {
-        font-family: 'Bodoni Moda', serif;
-        font-size: clamp(2.2rem, 4vw, 3.5rem);
-        font-weight: 300;
-        line-height: 1.1;
-        color: rgba(255, 255, 255, 0.95);
-      }
-
-      .metro-viewport {
-        position: relative;
-        width: 100%;
-        height: 420px;
-        overflow: hidden;
-      }
-
-      .metro-track {
-        position: absolute;
-        left: 6%;
-        top: 50%;
-        transform: translateY(-50%);
-        display: flex;
-        gap: 20px;
-      }
-
-      .metro-car {
-        flex-shrink: 0;
-        width: 340px;
-        height: 280px;
-        padding: 2.5rem;
-        background: rgba(255, 255, 255, 0.03);
-        border: 1px solid rgba(255, 255, 255, 0.06);
-        border-radius: 20px;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1),
-                    background 0.6s ease,
-                    border-color 0.6s ease;
-      }
-
-      .metro-car:hover {
-        transform: translateY(-8px);
-        background: rgba(255, 255, 255, 0.05);
-        border-color: rgba(255, 255, 255, 0.1);
-      }
-
-      .metro-car-title {
-        font-family: 'Bodoni Moda', serif;
-        font-size: 1.35rem;
-        font-weight: 400;
-        color: rgba(255, 255, 255, 0.95);
-        margin-bottom: 1rem;
-      }
-
-      .metro-car-description {
-        font-size: 0.95rem;
-        font-weight: 300;
-        line-height: 1.75;
-        color: rgba(255, 255, 255, 0.5);
-      }
-
-      .metro-fade-left,
-      .metro-fade-right {
-        position: absolute;
-        top: 0;
-        bottom: 0;
-        width: 150px;
-        pointer-events: none;
-        z-index: 10;
-      }
-
-      .metro-fade-left {
-        left: 0;
-        background: linear-gradient(to right, #050505, transparent);
-      }
-
-      .metro-fade-right {
-        right: 0;
-        background: linear-gradient(to left, #080808, transparent);
-      }
-
-      /* ===== RESPONSIVE ===== */
-      @media (max-width: 1024px) {
-        .hero {
-          padding: 6rem 4rem;
-        }
-
-        .metro-header {
-          padding: 0 4rem 3rem;
-        }
-
-        .metro-track {
-          left: 4%;
-        }
-      }
-
-      @media (max-width: 768px) {
-        .hero {
-          padding: 5rem 2rem;
-        }
-
-        .hero-logo-bg {
-          font-size: clamp(8rem, 20vw, 12rem);
-          left: -8%;
-        }
-
-        .video-info-card {
-          right: 1.5rem;
-          left: 1.5rem;
-          top: auto;
-          bottom: 6rem;
-          transform: none;
-          width: auto;
-          padding: 2rem;
-        }
-
-        .metro-header {
-          padding: 0 2rem 2.5rem;
-          flex-direction: column;
-          align-items: flex-start;
-        }
-
-        .metro-track {
-          left: 2rem;
-          gap: 16px;
-        }
-
-        .metro-car {
-          width: 300px;
-          height: 260px;
-          padding: 2rem;
-        }
-      }
-
-      @media (max-width: 480px) {
-        .splash-content {
-          padding: 2rem;
-        }
-
-        .hero {
-          padding: 4rem 1.5rem;
-        }
-
-        .video-info-card {
-          bottom: 5rem;
-          padding: 1.75rem;
-        }
-
-        .metro-track {
-          left: 1.5rem;
-        }
-
-        .metro-car {
-          width: 280px;
-          padding: 1.75rem;
-        }
-      }
-    </style>
-  </head>
-  <body class="loading">
-    <!-- Splash Screen -->
-    <div class="splash" id="splash">
-      <div class="splash-glow splash-glow-1"></div>
-      <div class="splash-glow splash-glow-2"></div>
-      <div class="splash-orb splash-orb-1"></div>
-      <div class="splash-orb splash-orb-2"></div>
-      <div class="splash-orb splash-orb-3"></div>
-
-      <div class="splash-content">
-        <div class="splash-video-container">
-          <video class="splash-video" id="splash-video" autoplay muted playsinline loop>
-            <source src="splash1.mp4" type="video/mp4" />
-          </video>
-        </div>
-        <div class="splash-logo-container">
-          <div class="splash-logo" id="splash-logo">Make It</div>
-        </div>
-        <p class="splash-tagline">Premium digital experiences</p>
-        <div class="splash-loader">
-          <div class="splash-loader-bar" id="loader-bar"></div>
-        </div>
-        <div class="splash-percentage" id="loader-percent">0%</div>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Metro Nexus — The Future of Transportation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..900;1,6..96,400..900&family=Fleur+De+Leah&family=PT+Serif:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+<script type="module" src="https://cdn.jsdelivr.net/npm/@google/model-viewer/dist/model-viewer.min.js"></script>
+<link rel="shortcut icon" href="/logo_wo_bg.png" type="image/x-icon">
+<style>
+  :root{
+    --ink:#0a0a0b;
+    --ink-2:#141416;
+    --charcoal:#1c1d1f;
+    --steel:#8a8d91;
+    --mist:#c4c6c9;
+    --paper:#f5f5f4;
+    --hair:rgba(255,255,255,0.08);
+    --hair-strong:rgba(255,255,255,0.16);
+    --display: 'PT Serif', serif;
+    --body: 'Bodoni Moda', serif;
+    --hand: 'Fleur De Leah', cursive;
+    --ease: cubic-bezier(.16,.8,.24,1);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    background:var(--ink);
+    color:var(--paper);
+    font-family:var(--body);
+    overflow-x:hidden;
+    -webkit-font-smoothing:antialiased;
+  }
+  ::selection{background:var(--paper);color:var(--ink);}
+
+  @media (prefers-reduced-motion: reduce){
+    *{animation-duration:0.01ms !important; animation-iteration-count:1 !important; transition-duration:0.01ms !important; scroll-behavior:auto !important;}
+  }
+
+  a:focus-visible, button:focus-visible{outline:2px solid var(--paper); outline-offset:4px;}
+
+  /* ============ SPLASH / LOADER ============ */
+  #splash{
+    position:fixed; inset:0; z-index:9999;
+    background:var(--ink);
+    display:flex; align-items:center; justify-content:center;
+    flex-direction:column;
+    gap:28px;
+  }
+  #loader-visual{
+    width:180px; height:180px;
+    position:relative;
+  }
+  #loader-visual svg{width:100%;height:100%;display:block;}
+  #loader-visual video{
+    width:100%;height:100%;display:block;object-fit:cover;
+    border-radius:50%;filter:brightness(0.9) contrast(1.1);
+  }
+  .loader-ring{
+    fill:none;
+    stroke:var(--mist);
+    stroke-width:1;
+    opacity:0.5;
+    transform-origin:center;
+  }
+  .loader-facet{
+    fill:none;
+    stroke:var(--paper);
+    stroke-width:1.1;
+    stroke-linecap:round;
+  }
+  .splash-word{
+    font-family:var(--display);
+    font-weight:300;
+    letter-spacing:0.5em;
+    text-transform:uppercase;
+    font-size:12px;
+    color:var(--steel);
+    text-indent:0.5em;
+  }
+  .splash-bar{
+    width:180px; height:1px; background:var(--hair);
+    position:relative; overflow:hidden;
+  }
+  .splash-bar span{
+    position:absolute; left:0; top:0; bottom:0;
+    width:0%; background:var(--paper);
+  }
+
+  /* ============ NAV ============ */
+  nav{
+    position:fixed; top:0; left:0; right:0; z-index:500;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:28px 5vw;
+    mix-blend-mode:difference;
+    opacity:0;
+  }
+  .nav-mark{
+    font-family:var(--display); font-weight:600; letter-spacing:0.06em;
+    font-size:15px; color:var(--paper);
+  }
+  .nav-links{display:flex; gap:36px; list-style:none;}
+  .nav-links a{
+    color:var(--paper); text-decoration:none;
+    font-size:12px; letter-spacing:0.12em; text-transform:uppercase;
+    font-weight:400; opacity:0.75; transition:opacity .3s var(--ease);
+  }
+  .nav-links a:hover{opacity:1;}
+
+  /* ============ HERO ============ */
+  #hero{
+    position:relative; height:100vh; width:100%;
+    display:flex; align-items:center; justify-content:center;
+    overflow:hidden;
+  }
+  #hero-bg{
+    position:absolute; inset:0;
+    overflow:hidden;
+    will-change:transform;
+    transform:scale(1.02);
+  }
+  #hero-bg::before{
+    content:'';
+    position:absolute; inset:0;
+    background-image:url('heroback.png');
+    background-size:cover;
+    background-position:center center;
+    background-repeat:no-repeat;
+    filter:blur(4px);
+    transform:scale(1.04);
+    pointer-events:none;
+  }
+  #hero-scrim{
+    position:absolute; inset:0;
+    background:
+      linear-gradient(180deg, rgba(10,10,11,0.55) 0%, rgba(10,10,11,0.35) 40%, rgba(10,10,11,0.75) 100%);
+    backdrop-filter:blur(0px);
+  }
+  #hero-content{
+    position:relative; z-index:5; text-align:center;
+    display:flex; flex-direction:column; align-items:center; gap:18px;
+    padding:0 24px;
+  }
+  .eyebrow-hand{
+    font-family:var(--hand); font-size:26px; color:var(--mist);
+    letter-spacing:0.02em; opacity:0.9;
+  }
+  #hero-title{
+    font-family:var(--display); font-weight:600;
+    font-size:clamp(48px, 9vw, 128px);
+    letter-spacing:-0.02em; line-height:0.95;
+    color:var(--paper);
+    text-shadow:0 2px 40px rgba(0,0,0,0.4);
+  }
+  #hero-sub{
+    font-family:var(--body); font-weight:300;
+    font-size:clamp(14px, 1.6vw, 19px);
+    letter-spacing:0.28em; text-transform:uppercase;
+    color:var(--mist); margin-top:6px;
+  }
+  .scroll-cue{
+    position:absolute; bottom:44px; left:50%; transform:translateX(-50%);
+    display:flex; flex-direction:column; align-items:center; gap:10px;
+    z-index:5; opacity:0.7;
+  }
+  .scroll-cue span{
+    font-size:10px; letter-spacing:0.2em; text-transform:uppercase; color:var(--mist);
+  }
+  .scroll-line{width:1px; height:36px; background:linear-gradient(var(--paper), transparent); overflow:hidden;}
+
+  /* ============ SECTION SHARED ============ */
+  section{position:relative;}
+  .section-head{
+    text-align:center; max-width:640px; margin:0 auto 0;
+    padding:0 24px;
+  }
+  .section-eyebrow{
+    font-family:var(--hand); font-size:24px; color:var(--steel); display:block; margin-bottom:6px;
+  }
+  .section-title{
+    font-family:var(--display); font-weight:500; font-size:clamp(30px,4.4vw,52px);
+    letter-spacing:-0.01em; color:var(--paper);
+  }
+  .section-desc{
+    font-family:var(--body); font-weight:300; color:var(--steel);
+    font-size:15px; line-height:1.7; margin-top:18px;
+  }
+
+  /* ============ RING / OBJECT SECTION ============ */
+  #object-section{
+    height:340vh;
+    background:linear-gradient(180deg, var(--ink) 0%, var(--ink-2) 50%, var(--ink) 100%);
+  }
+  #object-pin{
+    position:sticky; top:0; height:100vh; width:100%;
+    display:flex; flex-direction:column; align-items:center; justify-content:flex-end;
+    padding-bottom:100px;
+    overflow:hidden;
+  }
+  #object-canvas{
+    position:absolute; inset:0; width:100%; height:100%;
+  }
+  #object-caption{
+    position:relative; z-index:4; text-align:center; pointer-events:none;
+  }
+  #object-caption .section-eyebrow{margin-bottom:2px;}
+  #object-caption .section-title{font-size:clamp(24px,3.4vw,38px);}
+  .object-index{
+    position:absolute; z-index:4; bottom:56px; left:0; right:0;
+    display:flex; justify-content:center; gap:10px; pointer-events:none;
+  }
+  .object-index span{
+    width:5px; height:5px; border-radius:50%; background:var(--hair-strong);
+    transition:background .3s var(--ease), transform .3s var(--ease);
+  }
+  .object-index span.active{background:var(--paper); transform:scale(1.4);}
+
+  /* ============ COMPARTMENTS (HORIZONTAL SCROLL) — MINIMAL ============ */
+  #compartments-section{
+    height:auto;
+    background:var(--ink);
+  }
+  #compartments-pin{
+    position:sticky; top:0; height:100vh; width:100%;
+    overflow:hidden; display:flex; flex-direction:column;
+    justify-content:center;
+  }
+  #compartments-track{
+    display:flex; align-items:center; gap:6vw;
+    will-change:transform;
+    padding-left:10vw;
+  }
+  .compartment{
+    flex:0 0 auto;
+    width:min(72vw, 560px);
+    height:52vh;
+    background:transparent;
+    border:1px solid var(--hair);
+    border-radius:4px;
+    position:relative;
+    overflow:hidden;
+    display:flex; flex-direction:column; justify-content:space-between;
+    padding:36px 40px;
+  }
+  .compartment::before,
+  .compartment::after{content:none;}
+  .compartment-top{display:flex; justify-content:space-between; align-items:flex-start; position:relative; z-index:2;}
+  .compartment-line{
+    font-family:var(--display); font-size:11px; letter-spacing:0.18em; color:var(--steel);
+    text-transform:uppercase;
+  }
+  .compartment-num{
+    font-family:var(--display); font-size:11px; color:var(--steel); opacity:0.5;
+    letter-spacing:0.1em;
+  }
+  .compartment-body{
+    position:relative; z-index:2; margin:auto 0;
+  }
+  .compartment-title{
+    font-family:var(--display); font-weight:400; font-size:clamp(28px,4vw,42px); color:var(--paper);
+    letter-spacing:-0.02em; line-height:1.1; margin-bottom:16px;
+  }
+  .compartment-desc{
+    font-family:var(--body); font-weight:300; font-size:15px; color:var(--steel);
+    line-height:1.7; max-width:420px;
+  }
+  .compartment-tag{
+    font-family:var(--hand); font-size:22px; color:var(--mist); opacity:0.6;
+    display:block; margin-top:20px;
+  }
+  .compartment-bottom{
+    position:relative; z-index:2; display:flex; justify-content:space-between; align-items:flex-end;
+  }
+  .compartment-num-large{
+    font-family:var(--display); font-weight:300; font-size:clamp(48px,8vw,80px);
+    color:var(--hair-strong); line-height:1; opacity:0.5;
+  }
+  #metro-line-map{
+    position:relative; z-index:3;
+    width:min(72vw, 640px); margin:0 auto 48px;
+  }
+  .metro-rail{
+    position:relative; height:1px; background:var(--hair); border-radius:0;
+  }
+  .metro-rail span{
+    display:block; height:100%; width:0%; background:var(--paper);
+    border-radius:0; transition:width .1s linear;
+  }
+  .metro-stations{
+    position:relative; display:flex; justify-content:space-between; margin-top:-5px;
+  }
+  .metro-station{
+    display:flex; flex-direction:column; align-items:center; gap:10px;
+  }
+  .metro-dot{
+    width:7px; height:7px; border-radius:50%;
+    background:var(--ink); border:1px solid var(--hair-strong);
+    transition:background .3s var(--ease), border-color .3s var(--ease), transform .3s var(--ease);
+  }
+  .metro-label{
+    font-family:var(--display); font-size:10px; letter-spacing:0.14em; text-transform:uppercase;
+    color:var(--steel); opacity:0.6; white-space:nowrap;
+    transition:color .3s var(--ease), opacity .3s var(--ease);
+  }
+  .metro-station.active .metro-dot{
+    background:var(--paper); border-color:var(--paper); transform:scale(1.2);
+  }
+  .metro-station.active .metro-label{color:var(--paper); opacity:1;}
+
+  /* ============ CLOSING / FOOTER ============ */
+  #closing{
+    min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    text-align:center; padding:120px 24px; gap:28px;
+    background:radial-gradient(ellipse at center, var(--ink-2) 0%, var(--ink) 70%);
+  }
+  .closing-title{
+    font-family:var(--display); font-weight:500;
+    font-size:clamp(34px,6vw,72px); letter-spacing:-0.01em;
+    max-width:900px; line-height:1.05;
+  }
+  .glass-btn{
+    margin-top:12px;
+    padding:16px 40px;
+    border-radius:100px;
+    background:rgba(255,255,255,0.06);
+    border:1px solid var(--hair-strong);
+    backdrop-filter:blur(12px);
+    color:var(--paper);
+    font-family:var(--body); font-size:13px; letter-spacing:0.14em; text-transform:uppercase;
+    cursor:pointer;
+    transition:background .35s var(--ease), transform .35s var(--ease);
+  }
+  .glass-btn:hover{background:rgba(255,255,255,0.12); transform:translateY(-2px);}
+  .glass-btn--solid{background:var(--paper); border-color:var(--paper); color:var(--ink);}
+  .glass-btn--solid:hover{background:var(--mist); border-color:var(--mist);}
+
+  #account{
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    text-align:center; padding:100px 24px; gap:16px;
+    background:var(--ink); border-top:none;
+  }
+  #account .section-title{font-size:clamp(26px,4vw,42px);}
+  .account-sub{
+    font-family:var(--body); font-size:15px; color:var(--steel);
+    max-width:460px; line-height:1.5; margin-bottom:8px;
+  }
+  .account-actions{display:flex; gap:16px; flex-wrap:wrap; justify-content:center;}
+
+  footer{
+    padding:36px 5vw 44px;
+    display:flex; justify-content:space-between; align-items:center;
+    border-top:1px solid var(--hair);
+    font-size:12px; color:var(--steel); letter-spacing:0.06em;
+  }
+
+  @media (max-width:720px){
+    nav{padding:22px 20px;}
+    .nav-links{display:none;}
+    #object-section{height:280vh;}
+    #compartments-section{height:auto;}
+    .compartment{width:84vw; height:50vh; padding:24px;}
+    .compartment-window{height:88px;}
+  }
+</style>
+</head>
+<body>
+
+  <!-- ============ SPLASH ============ -->
+  <div id="splash" aria-hidden="true">
+    <div id="loader-visual">
+      <video autoplay muted playsinline loop>
+        <source src="splash1.mp4" type="video/mp4">
+      </video>
+    </div>
+    <div class="splash-word">Metro Nexus</div>
+    <div class="splash-bar"><span id="splash-fill"></span></div>
+  </div>
+
+  <!-- ============ NAV ============ -->
+  <nav>
+    <div class="nav-mark">METRO&nbsp;NEXUS</div>
+    <ul class="nav-links">
+      <li><a href="#object-section">The&nbsp;Ring</a></li>
+      <li><a href="#compartments-section">The&nbsp;Line</a></li>
+      <li><a href="auth.html?mode=login">Log&nbsp;In</a></li>
+    </ul>
+  </nav>
+
+  <!-- ============ HERO ============ -->
+  <section id="hero">
+    <div id="hero-bg"></div>
+    <div id="hero-scrim"></div>
+    <div id="hero-content">
+      <span class="eyebrow-hand">precision, underground</span>
+      <h1 id="hero-title">Metro&nbsp;Nexus</h1>
+      <p id="hero-sub">The Future of Transportation</p>
+    </div>
+    <div class="scroll-cue">
+      <span>Scroll</span>
+      <div class="scroll-line"></div>
+    </div>
+  </section>
+
+  <!-- ============ OBJECT / RING ============ -->
+  <section id="object-section">
+    <div id="object-pin">
+      <canvas id="object-canvas"></canvas>
+      <div id="object-caption">
+        <span class="section-eyebrow">the signature</span>
+        <h2 class="section-title">The&nbsp;Nexus&nbsp;Ring</h2>
+      </div>
+      <div class="object-index">
+        <span class="active"></span><span></span><span></span>
       </div>
     </div>
+  </section>
 
-    <!-- Main Content -->
-    <main class="main" id="main">
-      <!-- Hero Section -->
-      <section class="hero">
-        <div class="hero-logo-bg">MAKE IT</div>
-        <div class="hero-content">
-          <span class="hero-label">Quiet Product Direction</span>
-          <h1 class="hero-title">Premium minimalism expressed through motion and craftsmanship.</h1>
-          <p class="hero-description">We create calm digital experiences that feel purposeful, luxurious, and effortless. Every detail is designed to be quietly memorable.</p>
+  <!-- ============ COMPARTMENTS ============ -->
+  <section id="compartments-section">
+    <div id="compartments-pin">
+      <div class="section-head">
+        <span class="section-eyebrow">the line</span>
+        <h2 class="section-title">Every&nbsp;Car,&nbsp;Considered</h2>
+      </div>
+      <div id="metro-line-map">
+        <div class="metro-rail"><span id="metro-rail-fill"></span></div>
+        <div class="metro-stations">
+          <div class="metro-station active"><span class="metro-dot"></span><span class="metro-label">Start&nbsp;Hub</span></div>
+          <div class="metro-station"><span class="metro-dot"></span><span class="metro-label">Foundry</span></div>
+          <div class="metro-station"><span class="metro-dot"></span><span class="metro-label">Meridian</span></div>
+          <div class="metro-station"><span class="metro-dot"></span><span class="metro-label">Terminus</span></div>
         </div>
-      </section>
+      </div>
+      <div id="compartments-track">
 
-      <!-- Video Section -->
-      <section class="video-section" id="video-section">
-        <div class="video-container">
-          <video class="video-element" id="scroll-video" autoplay muted playsinline preload="auto" poster="metro.png">
-            <source src="scroll.mp4" type="video/mp4" />
-          </video>
-          <div class="video-overlay"></div>
-
-          <div class="video-info-card" id="video-card">
-            <h2>Scroll-driven motion, grounded in restraint.</h2>
-            <p>Glassmorphism and soft depth keep the information light while preserving the immersive video experience. The card floats over the frame with elegant clarity.</p>
+        <div class="compartment">
+          <div class="compartment-top">
+            <span class="compartment-line">Line 01 — Start Hub</span>
+            <span class="compartment-num">01 / 04</span>
           </div>
-
-          <div class="video-scroll-hint">Scroll to explore</div>
-        </div>
-      </section>
-
-      <!-- Metro Section -->
-      <section class="metro-section">
-        <div class="metro-header">
-          <div class="metro-header-content">
-            <span class="metro-label">Metro Showcase</span>
-            <h2 class="metro-title">Train motion revealed with elegant scroll refinement.</h2>
+          <div class="compartment-body">
+            <h3 class="compartment-title">Start Hub</h3>
+            <p class="compartment-desc">The origin point. Every journey begins here — a clean platform, a clear schedule, a quiet departure into the network below.</p>
+            <span class="compartment-tag">where it begins</span>
+          </div>
+          <div class="compartment-bottom">
+            <span class="compartment-num-large">01</span>
           </div>
         </div>
 
-        <div class="metro-viewport">
-          <div class="metro-fade-left"></div>
-          <div class="metro-fade-right"></div>
-
-          <div class="metro-track" id="metro-track">
-            <div class="metro-car">
-              <h3 class="metro-car-title">AI Navigation</h3>
-              <p class="metro-car-description">Dynamic routing that feels intelligent and intuitive for every commute.</p>
-            </div>
-            <div class="metro-car">
-              <h3 class="metro-car-title">Smart Tickets</h3>
-              <p class="metro-car-description">Seamless payment and ticketing designed for modern transit lifestyles.</p>
-            </div>
-            <div class="metro-car">
-              <h3 class="metro-car-title">Sustainability</h3>
-              <p class="metro-car-description">Thoughtful energy efficiency and materials create a more responsible journey.</p>
-            </div>
-            <div class="metro-car">
-              <h3 class="metro-car-title">Live Crowd Data</h3>
-              <p class="metro-car-description">Real-time occupancy insights help passengers move with less friction.</p>
-            </div>
-            <div class="metro-car">
-              <h3 class="metro-car-title">Personalized Routes</h3>
-              <p class="metro-car-description">Adaptive path options tailored to daily habits and momentary preferences.</p>
-            </div>
-            <div class="metro-car">
-              <h3 class="metro-car-title">Metro Commerce</h3>
-              <p class="metro-car-description">Onboard retail and services that feel natural, not intrusive.</p>
-            </div>
-            <div class="metro-car">
-              <h3 class="metro-car-title">Accessibility</h3>
-              <p class="metro-car-description">Design that welcomes every rider with clarity and generous support.</p>
-            </div>
-            <div class="metro-car">
-              <h3 class="metro-car-title">Future Mobility</h3>
-              <p class="metro-car-description">A forward-looking transit system built for the next era of urban life.</p>
-            </div>
+        <div class="compartment">
+          <div class="compartment-top">
+            <span class="compartment-line">Line 02 — Foundry District</span>
+            <span class="compartment-num">02 / 04</span>
+          </div>
+          <div class="compartment-body">
+            <h3 class="compartment-title">Foundry Platform</h3>
+            <p class="compartment-desc">Steel and stone, brushed clean. The foundry stop serves the old industrial quarter — now a district of makers, mills, and midnight diners.</p>
+            <span class="compartment-tag">steel, brushed clean</span>
+          </div>
+          <div class="compartment-bottom">
+            <span class="compartment-num-large">02</span>
           </div>
         </div>
-      </section>
-    </main>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
-    <script>
-      gsap.registerPlugin(ScrollTrigger);
+        <div class="compartment">
+          <div class="compartment-top">
+            <span class="compartment-line">Line 03 — Meridian Loop</span>
+            <span class="compartment-num">03 / 04</span>
+          </div>
+          <div class="compartment-body">
+            <h3 class="compartment-title">Meridian Concourse</h3>
+            <p class="compartment-desc">Wide and unhurried. The meridian loop crosses the city's spine — a broad concourse where three lines converge and travelers find their way.</p>
+            <span class="compartment-tag">wide, unhurried</span>
+          </div>
+          <div class="compartment-bottom">
+            <span class="compartment-num-large">03</span>
+          </div>
+        </div>
 
-      const splash = document.getElementById('splash');
-      const main = document.getElementById('main');
-      const loaderBar = document.getElementById('loader-bar');
-      const loaderPercent = document.getElementById('loader-percent');
-      const splashLoader = document.querySelector('.splash-loader');
-      const splashLogo = document.querySelector('.splash-logo');
-      const splashTagline = document.querySelector('.splash-tagline');
-      const splashPercentage = document.querySelector('.splash-percentage');
+        <div class="compartment">
+          <div class="compartment-top">
+            <span class="compartment-line">Line 04 — Terminus Nine</span>
+            <span class="compartment-num">04 / 04</span>
+          </div>
+          <div class="compartment-body">
+            <h3 class="compartment-title">Terminus Nine</h3>
+            <p class="compartment-desc">Journey's end. The final station on the line — where the tunnel opens to sky and every passenger steps out into something new.</p>
+            <span class="compartment-tag">journey's end</span>
+          </div>
+          <div class="compartment-bottom">
+            <span class="compartment-num-large">04</span>
+          </div>
+        </div>
 
-      // Splash animations
-      const splashTL = gsap.timeline({
-        onComplete: initPage
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ ACCOUNT / LOGIN-SIGNUP ============ -->
+  <section id="account">
+    <span class="eyebrow-hand">your line, your account</span>
+    <h2 class="section-title">Already riding with us?</h2>
+    <p class="account-sub">Sign in to manage your passes, or create an account to start your first trip.</p>
+    <div class="account-actions">
+      <button class="glass-btn glass-btn--solid" onclick="window.location.href='auth.html?mode=login'">Log In</button>
+      <button class="glass-btn" onclick="window.location.href='auth.html?mode=signup'">Sign Up</button>
+    </div>
+  </section>
+
+  <footer>
+    <span>Metro Nexus © 2026</span>
+    <span>Underground, elevated</span>
+  </footer>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js"></script>
+  <script>
+    gsap.registerPlugin(ScrollTrigger);
+
+    /* ============ SPLASH SEQUENCE ============ */
+    const splashTl = gsap.timeline();
+    splashTl.to('#splash-fill', {width:'100%', duration:1.6, ease:'power2.inOut'});
+    splashTl.to('.loader-facet-group', {rotate:360, duration:1.6, ease:'power2.inOut'}, 0);
+    splashTl.to('#loader-visual', {scale:0.9, duration:0.5, ease:'power2.in'}, 1.5);
+    splashTl.to('.splash-word, .splash-bar', {opacity:0, duration:0.4}, 1.6);
+    splashTl.to('#splash', {
+      opacity:0, duration:0.9, ease:'power2.inOut',
+      onStart:() => gsap.to('nav', {opacity:1, duration:0.8, delay:0.2}),
+      onComplete:() => { document.getElementById('splash').style.display = 'none'; }
+    }, 1.9);
+
+    /* ============ HERO PARALLAX ============ */
+    gsap.to('#hero-bg', {
+      yPercent:18,
+      scale:1.08,
+      ease:'none',
+      scrollTrigger:{ trigger:'#hero', start:'top top', end:'bottom top', scrub:true }
+    });
+    gsap.to('#hero-scrim', {
+      backdropFilter:'blur(6px)',
+      ease:'none',
+      scrollTrigger:{ trigger:'#hero', start:'top top', end:'bottom top', scrub:true }
+    });
+    gsap.to('#hero-content', {
+      yPercent:-30, opacity:0.2, ease:'none',
+      scrollTrigger:{ trigger:'#hero', start:'top top', end:'bottom top', scrub:true }
+    });
+
+    /* ============ THREE.JS RING (procedural stand-in for OBJ) ============ */
+    let renderer, scene, camera, ringGroup, objModelLoaded = false;
+
+    function buildProceduralRing(){
+      const group = new THREE.Group();
+
+      const bandGeo = new THREE.TorusGeometry(1.5, 0.55, 48, 128);
+      const bandMat = new THREE.MeshPhysicalMaterial({
+        color:0x1a1a1c, metalness:0.85, roughness:0.28,
+        clearcoat:0.6, clearcoatRoughness:0.25, reflectivity:0.5
       });
+      const band = new THREE.Mesh(bandGeo, bandMat);
+      band.rotation.x = Math.PI/2;
+      group.add(band);
 
-      // Initial glow pulse
-      splashTL.to('.splash-glow-1', {
-        opacity: 1,
-        scale: 1.2,
-        duration: 2,
-        ease: 'power2.out'
-      }, 0);
-
-      splashTL.to('.splash-glow-2', {
-        opacity: 0.8,
-        scale: 1.1,
-        duration: 2.5,
-        ease: 'power2.out'
-      }, 0.2);
-
-      // Video container entrance
-      splashTL.to('.splash-video-container', {
-        opacity: 1,
-        scale: 1,
-        duration: 1.6,
-        ease: 'power3.out'
-      }, 0.2);
-
-      // Logo entrance
-      splashTL.to(splashLogo, {
-        opacity: 1,
-        y: 0,
-        scale: 1,
-        duration: 1.4,
-        ease: 'power3.out'
-      }, 0.5);
-
-      // Tagline
-      splashTL.to(splashTagline, {
-        opacity: 1,
-        y: 0,
-        duration: 1,
-        ease: 'power2.out'
-      }, 0.75);
-
-      // Loader bar container
-      splashTL.to(splashLoader, {
-        opacity: 1,
-        duration: 0.6,
-        ease: 'power2.out'
-      }, 0.95);
-
-      // Percentage
-      splashTL.to(splashPercentage, {
-        opacity: 1,
-        duration: 0.6,
-        ease: 'power2.out'
-      }, 1.05);
-
-      // Progress bar animation
-      splashTL.to(loaderBar, {
-        width: '100%',
-        duration: 2.5,
-        ease: 'power2.inOut',
-        onUpdate: function() {
-          const progress = Math.round(this.progress() * 100);
-          loaderPercent.textContent = progress + '%';
-        }
-      }, 1.15);
-
-      // Orb animations (continuous)
-      function animateOrbs() {
-        gsap.to('.splash-orb-1', {
-          y: -20,
-          opacity: 0.5,
-          duration: 3,
-          ease: 'sine.inOut',
-          repeat: -1,
-          yoyo: true
-        });
-
-        gsap.to('.splash-orb-2', {
-          y: 15,
-          x: 10,
-          opacity: 0.4,
-          duration: 4,
-          ease: 'sine.inOut',
-          repeat: -1,
-          yoyo: true,
-          delay: 0.5
-        });
-
-        gsap.to('.splash-orb-3', {
-          y: -12,
-          x: -8,
-          opacity: 0.3,
-          duration: 3.5,
-          ease: 'sine.inOut',
-          repeat: -1,
-          yoyo: true,
-          delay: 1
-        });
-      }
-
-      animateOrbs();
-
-      // Initialize main page after splash
-      function initPage() {
-        // Fade out splash
-        gsap.to(splash, {
-          opacity: 0,
-          duration: 0.8,
-          ease: 'power2.inOut',
-          onComplete: () => {
-            splash.style.display = 'none';
-            document.body.classList.remove('loading');
-          }
-        });
-
-        // Show main content
-        gsap.to(main, {
-          opacity: 1,
-          duration: 1,
-          ease: 'power2.out',
-          onStart: () => {
-            main.classList.add('visible');
-          }
-        });
-
-        // Hero animations
-        gsap.from('.hero-logo-bg', {
-          opacity: 0,
-          x: -100,
-          duration: 2,
-          ease: 'power3.out',
-          delay: 0.3
-        });
-
-        gsap.from('.hero-label', {
-          opacity: 0,
-          y: 30,
-          duration: 1,
-          ease: 'power3.out',
-          delay: 0.5
-        });
-
-        gsap.from('.hero-title', {
-          opacity: 0,
-          y: 50,
-          duration: 1.2,
-          ease: 'power3.out',
-          delay: 0.65
-        });
-
-        gsap.from('.hero-description', {
-          opacity: 0,
-          y: 40,
-          duration: 1,
-          ease: 'power3.out',
-          delay: 0.85
-        });
-
-        // Initialize scroll video
-        initScrollVideo();
-
-        // Initialize metro scroll
-        initMetroScroll();
-
-        // Video card animation
-        gsap.from('.video-info-card', {
-          scrollTrigger: {
-            trigger: '.video-section',
-            start: 'top 60%',
-            end: 'center center',
-            scrub: 1
-          },
-          opacity: 0,
-          y: 60,
-          ease: 'power2.out'
-        });
-
-        // Metro header animation
-        gsap.from('.metro-header', {
-          scrollTrigger: {
-            trigger: '.metro-section',
-            start: 'top 80%'
-          },
-          opacity: 0,
-          y: 40,
-          duration: 1,
-          ease: 'power3.out'
-        });
-      }
-
-      // Scroll Video Controller
-      function initScrollVideo() {
-        const video = document.getElementById('scroll-video');
-        const videoSection = document.getElementById('video-section');
-
-        let videoReady = false;
-        let rafId = null;
-
-        function syncVideo() {
-          if (!videoReady) return;
-
-          const duration = video.duration;
-          if (!duration || isNaN(duration)) return;
-
-          const rect = videoSection.getBoundingClientRect();
-          const scrollTop = window.scrollY;
-          const sectionTop = rect.top + scrollTop;
-          const viewportHeight = window.innerHeight;
-          const sectionHeight = videoSection.offsetHeight;
-
-          const start = sectionTop - viewportHeight;
-          const end = sectionTop + sectionHeight - viewportHeight;
-          const progress = Math.max(0, Math.min(1, (scrollTop - start) / (end - start)));
-
-          const targetTime = progress * (duration - 0.05);
-
-          if (Math.abs(video.currentTime - targetTime) > 0.02) {
-            video.currentTime = targetTime;
-          }
-
-          rafId = null;
-        }
-
-        function requestSync() {
-          if (rafId) return;
-          rafId = requestAnimationFrame(syncVideo);
-        }
-
-        function onVideoReady() {
-          if (videoReady) return;
-          videoReady = true;
-
-          video.pause();
-          video.currentTime = 0;
-
-          const scrollDuration = Math.max(1800, Math.ceil(video.duration * 180));
-          videoSection.style.minHeight = scrollDuration + 'px';
-
-          window.addEventListener('scroll', requestSync, { passive: true });
-          window.addEventListener('resize', requestSync);
-
-          requestSync();
-        }
-
-        if (video.readyState >= 2) {
-          onVideoReady();
-        } else {
-          video.addEventListener('loadedmetadata', onVideoReady, { once: true });
-          video.addEventListener('canplay', onVideoReady, { once: true });
-        }
-      }
-
-      // Metro horizontal scroll
-      function initMetroScroll() {
-        const track = document.getElementById('metro-track');
-        const section = document.querySelector('.metro-section');
-
-        const trackWidth = track.scrollWidth;
-        const viewportWidth = window.innerWidth;
-        const travelDistance = Math.max(0, trackWidth - viewportWidth + 150);
-
-        gsap.to(track, {
-          x: -travelDistance,
-          ease: 'none',
-          scrollTrigger: {
-            trigger: section,
-            start: 'top top',
-            end: () => '+=' + (trackWidth + 300),
-            scrub: 0.8,
-            pin: false
-          }
-        });
-
-        // Stagger car animations
-        gsap.from('.metro-car', {
-          scrollTrigger: {
-            trigger: section,
-            start: 'top 85%'
-          },
-          y: 50,
-          opacity: 0,
-          duration: 0.8,
-          ease: 'power2.out',
-          stagger: 0.1
-        });
-      }
-
-      // Refresh ScrollTrigger on load
-      window.addEventListener('load', () => {
-        ScrollTrigger.refresh();
+      const facetMat = new THREE.MeshPhysicalMaterial({
+        color:0x232326, metalness:0.9, roughness:0.2, clearcoat:0.8
       });
-    </script>
-  </body>
+      const crest = new THREE.Mesh(new THREE.IcosahedronGeometry(0.85, 0), facetMat);
+      crest.position.z = 0.55;
+      crest.scale.set(1,1,0.5);
+      group.add(crest);
+
+      const lineMat = new THREE.LineBasicMaterial({color:0x8a8d91, transparent:true, opacity:0.6});
+      const edges = new THREE.EdgesGeometry(crest.geometry);
+      const wire = new THREE.LineSegments(edges, lineMat);
+      wire.scale.copy(crest.scale);
+      wire.position.copy(crest.position);
+      group.add(wire);
+
+      return group;
+    }
+
+    function loadObjModel(){
+      if (!THREE.OBJLoader) return;
+
+      const loader = new THREE.OBJLoader();
+      loader.load(
+        'object.obj',
+        function (object) {
+          object.traverse(child => {
+            if (child.isMesh) {
+              child.material = child.material || new THREE.MeshStandardMaterial({ color: 0xd4d5d8 });
+              child.material.side = THREE.DoubleSide;
+              child.castShadow = true;
+              child.receiveShadow = true;
+            }
+          });
+          object.scale.set(0.3, 0.3, 0.3);
+          object.rotation.x = Math.PI * 0.15;
+          object.position.set(0, 0, 0);
+
+          if (ringGroup) {
+            while (ringGroup.children.length) ringGroup.remove(ringGroup.children[0]);
+            ringGroup.add(object);
+          }
+          objModelLoaded = true;
+        },
+        undefined,
+        function (error) {
+          console.warn('OBJ load failed, using fallback ring.', error);
+        }
+      );
+    }
+
+    function initObjectScene(){
+      const canvas = document.getElementById('object-canvas');
+      renderer = new THREE.WebGLRenderer({canvas, antialias:true, alpha:true});
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.setSize(window.innerWidth, window.innerHeight);
+
+      scene = new THREE.Scene();
+      camera = new THREE.PerspectiveCamera(38, window.innerWidth/window.innerHeight, 0.1, 100);
+      camera.position.set(0, 0, 8);
+
+      const key = new THREE.DirectionalLight(0xffffff, 1.4);
+      key.position.set(4, 5, 6);
+      scene.add(key);
+      const fill = new THREE.DirectionalLight(0x8a8d91, 0.5);
+      fill.position.set(-5, -2, 3);
+      scene.add(fill);
+      scene.add(new THREE.AmbientLight(0x404040, 0.6));
+
+      ringGroup = new THREE.Group();
+      ringGroup.scale.set(0.3, 0.3, 0.3);
+      ringGroup.rotation.x = 0.3;
+      ringGroup.add(buildProceduralRing());
+      scene.add(ringGroup);
+      loadObjModel();
+
+      function animate(){
+        requestAnimationFrame(animate);
+        renderer.render(scene, camera);
+      }
+      animate();
+
+      window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth/window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      });
+    }
+    initObjectScene();
+
+    const objTl = gsap.timeline({
+      scrollTrigger:{
+        trigger:'#object-section',
+        start:'top top',
+        end:'bottom bottom',
+        scrub:0.6,
+        onUpdate: self => {
+          const idx = Math.min(2, Math.floor(self.progress * 3));
+          document.querySelectorAll('.object-index span').forEach((el,i) => el.classList.toggle('active', i===idx));
+        }
+      }
+    });
+    objTl.to(ringGroup.rotation, {y: Math.PI*1.1, x:0.58}, 0);
+    objTl.to(ringGroup.position, {y:0.36}, 0);
+    objTl.to(ringGroup.position, {y:-0.16}, 0.5);
+    objTl.to(camera.position, {z:7.6, y:0.12}, 0);
+
+    /* ============ HORIZONTAL COMPARTMENTS ============ */
+    function initCompartmentScroll(){
+      const track = document.getElementById('compartments-track');
+      const pin = document.getElementById('compartments-pin');
+      const distance = () => track.scrollWidth - window.innerWidth + window.innerWidth*0.08;
+
+      gsap.to(track, {
+        x: () => -distance(),
+        ease:'none',
+        scrollTrigger:{
+          trigger:'#compartments-section',
+          start:'top top',
+          end:() => '+=' + distance(),
+          scrub:0.6,
+          pin:pin,
+          pinSpacing:true,
+          invalidateOnRefresh:true,
+          onUpdate: self => {
+            document.getElementById('metro-rail-fill').style.width = (self.progress*100) + '%';
+            const idx = Math.min(3, Math.floor(self.progress * 4));
+            document.querySelectorAll('.metro-station').forEach((el,i) => el.classList.toggle('active', i===idx));
+          }
+        }
+      });
+    }
+    initCompartmentScroll();
+
+    gsap.utils.toArray('.compartment').forEach(card => {
+      gsap.fromTo(card, {opacity:0.35, y:14}, {
+        opacity:1, y:0, duration:0.6, ease:'power2.out',
+        scrollTrigger:{
+          trigger:card,
+          containerAnimation: gsap.getById && undefined,
+          start:'left 90%',
+          horizontal:true,
+          toggleActions:'play none none reverse'
+        }
+      });
+    });
+
+    ScrollTrigger.refresh();
+  </script>
+</body>
 </html>

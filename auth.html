@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Metro Nexus — Account</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..900;1,6..96,400..900&family=Fleur+De+Leah&family=PT+Serif:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+<link rel="shortcut icon" href="/logo_wo_bg.png" type="image/x-icon">
+<style>
+  :root{
+    --ink:#0a0a0b;
+    --ink-2:#141416;
+    --steel:#8a8d91;
+    --mist:#c4c6c9;
+    --paper:#f5f5f4;
+    --hair:rgba(255,255,255,0.08);
+    --hair-strong:rgba(255,255,255,0.16);
+    --display:'PT Serif',serif;
+    --body:'Bodoni Moda',serif;
+    --hand:'Fleur De Leah',cursive;
+    --ease:cubic-bezier(.16,.8,.24,1);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{
+    background:var(--ink);
+    color:var(--paper);
+    font-family:var(--body);
+    overflow:hidden;
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+  }
+  ::selection{background:var(--paper);color:var(--ink);}
+
+  /* 3D watermark canvas */
+  #watermark-canvas{
+    position:fixed;
+    top:50%; left:50%;
+    transform:translate(-50%,-50%);
+    width:400px; height:400px;
+    z-index:0;
+    opacity:0.12;
+    pointer-events:none;
+  }
+
+  /* Floating 3D object */
+  #float-object-host{
+    position:fixed;
+    inset:0;
+    width:100vw;
+    height:100vh;
+    z-index:1;
+    opacity:0.95;
+    pointer-events:none;
+    filter:drop-shadow(0 24px 90px rgba(0,0,0,0.55));
+  }
+  #float-object-host canvas{
+    width:100% !important;
+    height:100% !important;
+    display:block;
+  }
+
+  /* Nav */
+  .auth-nav{
+    position:fixed; top:0; left:0; right:0; z-index:100;
+    display:flex; justify-content:space-between; align-items:center;
+    padding:28px 5vw;
+  }
+  .auth-nav a{
+    color:var(--paper); text-decoration:none;
+    font-family:var(--display); font-weight:600;
+    font-size:15px; letter-spacing:0.06em;
+  }
+  .auth-nav .back-link{
+    font-size:12px; letter-spacing:0.12em; text-transform:uppercase;
+    font-weight:400; opacity:0.6; transition:opacity .3s var(--ease);
+  }
+  .auth-nav .back-link:hover{opacity:1;}
+
+  /* Auth card */
+  .auth-wrap{
+    position:relative; z-index:10;
+    min-height:100vh;
+    display:flex; align-items:center; justify-content:center;
+    padding:80px 24px;
+  }
+  .auth-card{
+    width:100%; max-width:420px;
+    position:relative; isolation:isolate;
+    background:linear-gradient(135deg, rgba(255,255,255,0.16), rgba(255,255,255,0.05));
+    backdrop-filter:blur(5px) saturate(140%);
+    -webkit-backdrop-filter:blur(24px) saturate(140%);
+    border:1px solid rgba(255,255,255,0.16);
+    border-radius:18px;
+    padding:48px 40px;
+    display:flex; flex-direction:column;
+    gap:20px;
+    box-shadow:0 24px 80px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.12);
+    overflow:hidden;
+  }
+  .auth-card::before{
+    content:'';
+    position:absolute; inset:0;
+    background:radial-gradient(circle at top left, rgba(255,255,255,0.18), transparent 42%);
+    pointer-events:none;
+    z-index:-1;
+  }
+  .auth-header{
+    text-align:center;
+    margin-bottom:8px;
+  }
+  .auth-eyebrow{
+    font-family:var(--hand); font-size:24px; color:var(--steel);
+    display:block; margin-bottom:4px;
+  }
+  .auth-title{
+    font-family:var(--display); font-weight:500;
+    font-size:32px; letter-spacing:-0.01em; color:var(--paper);
+  }
+  .auth-sub{
+    font-family:var(--body); font-weight:300;
+    font-size:14px; color:var(--steel);
+    text-align:center; margin-top:-4px; margin-bottom:8px;
+    line-height:1.5;
+  }
+  .field-group{
+    display:flex; flex-direction:column; gap:6px;
+  }
+  .field-label{
+    font-family:var(--display); font-size:11px;
+    letter-spacing:0.14em; text-transform:uppercase; color:var(--steel);
+  }
+  .field-input{
+    width:100%;
+    padding:14px 16px;
+    background:rgba(255,255,255,0.03);
+    border:1px solid var(--hair);
+    border-radius:6px;
+    color:var(--paper);
+    font-family:var(--body); font-size:15px;
+    outline:none;
+    transition:border-color .3s var(--ease), background .3s var(--ease);
+  }
+  .field-input:focus{
+    border-color:var(--hair-strong);
+    background:rgba(255,255,255,0.05);
+  }
+  .field-input::placeholder{color:var(--steel); opacity:0.5;}
+
+  .auth-btn{
+    margin-top:8px;
+    padding:15px;
+    border-radius:6px;
+    border:none;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:var(--body); font-size:13px;
+    letter-spacing:0.14em; text-transform:uppercase;
+    font-weight:500;
+    cursor:pointer;
+    transition:background .3s var(--ease), transform .3s var(--ease);
+  }
+  .auth-btn:hover{background:var(--mist); transform:translateY(-1px);}
+  .auth-btn:disabled{opacity:0.5; cursor:wait; transform:none;}
+
+  .auth-error{
+    background:rgba(255,80,80,0.08);
+    border:1px solid rgba(255,80,80,0.2);
+    border-radius:6px;
+    padding:12px 16px;
+    font-family:var(--body); font-size:13px;
+    color:#ff9999;
+    display:none;
+  }
+  .auth-error.show{display:block;}
+
+  .auth-switch{
+    text-align:center;
+    font-family:var(--body); font-size:13px; color:var(--steel);
+    margin-top:4px;
+  }
+  .auth-switch a{
+    color:var(--paper); text-decoration:none;
+    border-bottom:1px solid var(--hair-strong);
+    padding-bottom:1px;
+    transition:border-color .3s var(--ease);
+  }
+  .auth-switch a:hover{border-color:var(--paper);}
+
+  .auth-success{
+    display:none;
+    flex-direction:column; align-items:center; gap:16px;
+    text-align:center;
+  }
+  .auth-success.show{display:flex;}
+  .auth-success .check{
+    width:56px; height:56px; border-radius:50%;
+    border:2px solid var(--paper);
+    display:flex; align-items:center; justify-content:center;
+    font-size:28px; color:var(--paper);
+  }
+  .auth-success p{
+    font-family:var(--display); font-size:20px; color:var(--paper);
+  }
+
+  /* Toggle between login/signup */
+  .auth-form{display:flex; flex-direction:column; gap:20px;}
+  .auth-form.hidden{display:none;}
+
+  @media (max-width:520px){
+    .auth-card{padding:36px 24px;}
+    #watermark-canvas{width:400px; height:400px;}
+  }
+</style>
+</head>
+<body>
+
+  <!-- 3D watermark -->
+  <canvas id="watermark-canvas"></canvas>
+
+  <!-- Floating 3D object -->
+  <div id="float-object-host" aria-hidden="true"></div>
+
+  <!-- Nav -->
+  <div class="auth-nav">
+    <a href="index.html">METRO&nbsp;NEXUS</a>
+    <a href="index.html" class="back-link">Back</a>
+  </div>
+
+  <!-- Auth -->
+  <div class="auth-wrap">
+    <div class="auth-card">
+
+      <!-- LOGIN -->
+      <div class="auth-form" id="login-form">
+        <div class="auth-header">
+          <span class="auth-eyebrow">welcome back</span>
+          <h2 class="auth-title">Log In</h2>
+        </div>
+        <p class="auth-sub">Sign in to manage your passes and continue your journey.</p>
+        <div class="auth-error" id="login-error"></div>
+        <div class="field-group">
+          <label class="field-label">Email</label>
+          <input type="email" class="field-input" id="login-email" placeholder="you@example.com" autocomplete="email">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Password</label>
+          <input type="password" class="field-input" id="login-password" placeholder="••••••••" autocomplete="current-password">
+        </div>
+        <button class="auth-btn" id="login-btn">Log In</button>
+        <p class="auth-switch">New here? <a href="#" id="goto-signup">Create an account</a></p>
+      </div>
+
+      <!-- SIGNUP -->
+      <div class="auth-form hidden" id="signup-form">
+        <div class="auth-header">
+          <span class="auth-eyebrow">begin your journey</span>
+          <h2 class="auth-title">Sign Up</h2>
+        </div>
+        <p class="auth-sub">Create an account to start your first trip on the Metro Nexus line.</p>
+        <div class="auth-error" id="signup-error"></div>
+        <div class="field-group">
+          <label class="field-label">Name</label>
+          <input type="text" class="field-input" id="signup-name" placeholder="Your name" autocomplete="name">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Email</label>
+          <input type="email" class="field-input" id="signup-email" placeholder="you@example.com" autocomplete="email">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Password</label>
+          <input type="password" class="field-input" id="signup-password" placeholder="At least 6 characters" autocomplete="new-password">
+        </div>
+        <button class="auth-btn" id="signup-btn">Create Account</button>
+        <p class="auth-switch">Already have an account? <a href="#" id="goto-login">Log in</a></p>
+      </div>
+
+      <!-- SUCCESS -->
+      <div class="auth-success" id="auth-success">
+        <div class="check">&#10003;</div>
+        <p id="success-msg">Welcome aboard.</p>
+        <button class="auth-btn" style="margin-top:8px;" onclick="window.location.href='Dashboard.html'">Enter Metro Nexus</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+
+  <!-- Three.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js"></script>
+
+  <script>
+    /* ============ FIREBASE ============ */
+    const firebaseConfig = {
+      apiKey: "AIzaSyBn556xKCIzqT2qBmhgONEpy6yr5V10vdI",
+      authDomain: "metro-nexus.firebaseapp.com",
+      projectId: "metro-nexus",
+      storageBucket: "metro-nexus.firebasestorage.app",
+      messagingSenderId: "275190918417",
+      appId: "1:275190918417:web:22b21a6bc111c0ec6230b0"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+
+    /* ============ MODE DETECTION ============ */
+    const params = new URLSearchParams(window.location.search);
+    const mode = params.get('mode') || 'login';
+
+    const loginForm = document.getElementById('login-form');
+    const signupForm = document.getElementById('signup-form');
+
+    if (mode === 'signup') {
+      loginForm.classList.add('hidden');
+      signupForm.classList.remove('hidden');
+    }
+
+    /* ============ FLOATING 3D OBJECT ============ */
+    const floatObjectHost = document.getElementById('float-object-host');
+    let floatRenderer = null;
+    let floatScene = null;
+    let floatCamera = null;
+    let floatModelGroup = null;
+
+    function initFloatingObjectScene() {
+      if (floatRenderer || !THREE.OBJLoader) return;
+
+      floatRenderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+      floatRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      floatRenderer.setSize(floatObjectHost.clientWidth || 320, floatObjectHost.clientHeight || 320);
+      floatObjectHost.appendChild(floatRenderer.domElement);
+
+      floatScene = new THREE.Scene();
+      floatCamera = new THREE.PerspectiveCamera(35, 1, 0.1, 100);
+      floatCamera.position.set(0, 0, 6);
+
+      const ambient = new THREE.AmbientLight(0xffffff, 0.8);
+      floatScene.add(ambient);
+      const key = new THREE.DirectionalLight(0xffffff, 1.35);
+      key.position.set(4, 5, 6);
+      floatScene.add(key);
+      const fill = new THREE.DirectionalLight(0x8a8d91, 0.55);
+      fill.position.set(-5, -2, 3);
+      floatScene.add(fill);
+
+      const loader = new THREE.OBJLoader();
+      loader.load(
+        'object.obj',
+        (object) => {
+          object.traverse((child) => {
+            if (child.isMesh) {
+              child.material = child.material || new THREE.MeshStandardMaterial({ color: 0xe7e8ea });
+              child.material.side = THREE.DoubleSide;
+            }
+          });
+          object.scale.set(0.10, 0.15, 0.15);
+          object.rotation.x = Math.PI * 0.16;
+          floatModelGroup = new THREE.Group();
+          floatModelGroup.add(object);
+          floatScene.add(floatModelGroup);
+        },
+        undefined,
+        (error) => {
+          console.warn('Floating OBJ load failed.', error);
+        }
+      );
+
+      const render = () => {
+        if (floatRenderer && floatScene && floatCamera) {
+          if (floatModelGroup) {
+            floatModelGroup.rotation.y += 0.008;
+            floatModelGroup.position.y = Math.sin(Date.now() / 900) * 0.12;
+          }
+          floatRenderer.render(floatScene, floatCamera);
+        }
+        requestAnimationFrame(render);
+      };
+      render();
+
+      window.addEventListener('resize', () => {
+        if (!floatRenderer) return;
+        floatRenderer.setSize(floatObjectHost.clientWidth || 320, floatObjectHost.clientHeight || 320);
+        floatCamera.aspect = 1;
+        floatCamera.updateProjectionMatrix();
+      });
+    }
+    initFloatingObjectScene();
+
+    /* ============ FORM SWITCHING ============ */
+    document.getElementById('goto-signup').addEventListener('click', (e) => {
+      e.preventDefault();
+      loginForm.classList.add('hidden');
+      signupForm.classList.remove('hidden');
+      document.getElementById('login-error').classList.remove('show');
+      history.replaceState(null, '', 'auth.html?mode=signup');
+    });
+
+    document.getElementById('goto-login').addEventListener('click', (e) => {
+      e.preventDefault();
+      signupForm.classList.add('hidden');
+      loginForm.classList.remove('hidden');
+      document.getElementById('signup-error').classList.remove('show');
+      history.replaceState(null, '', 'auth.html?mode=login');
+    });
+
+    /* ============ LOGIN ============ */
+    document.getElementById('login-btn').addEventListener('click', () => {
+      const email = document.getElementById('login-email').value.trim();
+      const password = document.getElementById('login-password').value;
+      const errorEl = document.getElementById('login-error');
+      const btn = document.getElementById('login-btn');
+
+      if (!email || !password) {
+        errorEl.textContent = 'Please enter your email and password.';
+        errorEl.classList.add('show');
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = 'Signing in...';
+
+      auth.signInWithEmailAndPassword(email, password)
+        .then((userCredential) => {
+          showSuccess('Welcome back, ' + (userCredential.user.displayName || 'traveler') + '.');
+        })
+        .catch((err) => {
+          errorEl.textContent = formatError(err);
+          errorEl.classList.add('show');
+          btn.disabled = false;
+          btn.textContent = 'Log In';
+        });
+    });
+
+    /* ============ SIGNUP ============ */
+    document.getElementById('signup-btn').addEventListener('click', () => {
+      const name = document.getElementById('signup-name').value.trim();
+      const email = document.getElementById('signup-email').value.trim();
+      const password = document.getElementById('signup-password').value;
+      const errorEl = document.getElementById('signup-error');
+      const btn = document.getElementById('signup-btn');
+
+      if (!name || !email || !password) {
+        errorEl.textContent = 'Please fill in all fields.';
+        errorEl.classList.add('show');
+        return;
+      }
+
+      if (password.length < 6) {
+        errorEl.textContent = 'Password must be at least 6 characters.';
+        errorEl.classList.add('show');
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = 'Creating...';
+
+      auth.createUserWithEmailAndPassword(email, password)
+        .then((userCredential) => {
+          return userCredential.user.updateProfile({ displayName: name })
+            .then(() => showSuccess('Welcome aboard, ' + name + '.'));
+        })
+        .catch((err) => {
+          errorEl.textContent = formatError(err);
+          errorEl.classList.add('show');
+          btn.disabled = false;
+          btn.textContent = 'Create Account';
+        });
+    });
+
+    function showSuccess(msg) {
+      document.getElementById('success-msg').textContent = msg;
+      loginForm.classList.add('hidden');
+      signupForm.classList.add('hidden');
+      document.getElementById('auth-success').classList.add('show');
+      // Auto-continue into the dashboard shortly after the success state appears.
+      clearTimeout(window.__dashRedirect);
+      window.__dashRedirect = setTimeout(() => {
+        window.location.href = 'dashboard.html';
+      }, 1400);
+    }
+
+    function formatError(err) {
+      const map = {
+        'auth/invalid-email': 'That email address looks invalid.',
+        'auth/user-not-found': 'No account found with that email.',
+        'auth/wrong-password': 'Incorrect password. Please try again.',
+        'auth/email-already-in-use': 'An account already exists with that email.',
+        'auth/weak-password': 'Password should be at least 6 characters.',
+        'auth/missing-email': 'Please enter an email address.',
+        'auth/invalid-credential': 'Invalid email or password.',
+        'auth/network-request-failed': 'Network error. Check your connection.'
+      };
+      return map[err.code] || err.message || 'Something went wrong. Please try again.';
+    }
+
+    /* ============ AUTH STATE ============ */
+    auth.onAuthStateChanged((user) => {
+      if (user) {
+        showSuccess('Welcome back, ' + (user.displayName || 'traveler') + '.');
+      }
+    });
+
+    /* ============ 3D WATERMARK RING ============ */
+    let wmRenderer, wmScene, wmCamera, wmRing;
+
+    function initWatermark() {
+      const canvas = document.getElementById('watermark-canvas');
+      wmRenderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+      wmRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      wmRenderer.setSize(600, 600);
+
+      wmScene = new THREE.Scene();
+      wmCamera = new THREE.PerspectiveCamera(38, 1, 0.1, 100);
+      wmCamera.position.set(0, 0, 8);
+
+      const key = new THREE.DirectionalLight(0xffffff, 1.4);
+      key.position.set(4, 5, 6);
+      wmScene.add(key);
+      const fill = new THREE.DirectionalLight(0x8a8d91, 0.5);
+      fill.position.set(-5, -2, 3);
+      wmScene.add(fill);
+      wmScene.add(new THREE.AmbientLight(0x404040, 0.6));
+
+      wmRing = new THREE.Group();
+      wmRing.scale.set(0.3, 0.3, 0.3);
+
+      const bandGeo = new THREE.TorusGeometry(1.5, 0.55, 48, 128);
+      const bandMat = new THREE.MeshPhysicalMaterial({
+        color: 0x1a1a1c, metalness: 0.85, roughness: 0.28,
+        clearcoat: 0.6, clearcoatRoughness: 0.25, reflectivity: 0.5
+      });
+      const band = new THREE.Mesh(bandGeo, bandMat);
+      band.rotation.x = Math.PI / 2;
+      wmRing.add(band);
+
+      const facetMat = new THREE.MeshPhysicalMaterial({
+        color: 0x232326, metalness: 0.9, roughness: 0.2, clearcoat: 0.8
+      });
+      const crest = new THREE.Mesh(new THREE.IcosahedronGeometry(0.85, 0), facetMat);
+      crest.position.z = 0.55;
+      crest.scale.set(1, 1, 0.5);
+      wmRing.add(crest);
+
+      const lineMat = new THREE.LineBasicMaterial({ color: 0x8a8d91, transparent: true, opacity: 0.6 });
+      const edges = new THREE.EdgesGeometry(crest.geometry);
+      const wire = new THREE.LineSegments(edges, lineMat);
+      wire.scale.copy(crest.scale);
+      wire.position.copy(crest.position);
+      wmRing.add(wire);
+
+      wmRing.rotation.x = 0.3;
+      wmScene.add(wmRing);
+
+      function animate() {
+        requestAnimationFrame(animate);
+        wmRing.rotation.y += 0.003;
+        wmRenderer.render(wmScene, wmCamera);
+      }
+      animate();
+
+      window.addEventListener('resize', () => {
+        wmCamera.aspect = 1;
+        wmCamera.updateProjectionMatrix();
+      });
+    }
+    initWatermark();
+
+    /* Enter key submits forms */
+    document.getElementById('login-password').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') document.getElementById('login-btn').click();
+    });
+    document.getElementById('signup-password').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') document.getElementById('signup-btn').click();
+    });
+  </script>
+</body>
+</html>

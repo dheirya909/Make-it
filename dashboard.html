@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Metro Nexus — Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..900;1,6..96,400..900&family=Fleur+De+Leah&family=PT+Serif:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+<link rel="shortcut icon" href="/logo_wo_bg.png" type="image/x-icon">
+<style>
+  :root{
+    --ink:#0a0a0b;
+    --ink-2:#141416;
+    --ink-3:#1b1b1e;
+    --steel:#8a8d91;
+    --mist:#c4c6c9;
+    --paper:#f5f5f4;
+    --hair:rgba(255,255,255,0.08);
+    --hair-strong:rgba(255,255,255,0.16);
+    --display:'PT Serif',serif;
+    --body:'Bodoni Moda',serif;
+    --hand:'Fleur De Leah',cursive;
+    --ease:cubic-bezier(.16,.8,.24,1);
+    --success:#6ee7b7;
+    --warning:#fbbf24;
+    --error:#fca5a5;
+    --accent:#9bc1e8;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html,body{background:var(--ink);color:var(--paper);font-family:var(--body);-webkit-font-smoothing:antialiased;min-height:100vh;}
+  body{overflow-x:hidden;}
+  ::selection{background:var(--paper);color:var(--ink);}
+
+  /* ambient background */
+  .bg-grad{
+    position:fixed;inset:0;z-index:0;pointer-events:none;
+    background:
+      radial-gradient(900px 600px at 12% -8%, rgba(155,193,232,0.07), transparent 60%),
+      radial-gradient(800px 600px at 100% 110%, rgba(255,255,255,0.05), transparent 60%);
+  }
+  #watermark-canvas{
+    position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+    width:420px;height:420px;z-index:0;opacity:0.07;pointer-events:none;
+  }
+
+  /* Header */
+  .topbar{
+    position:fixed;top:0;left:0;right:0;z-index:80;
+    display:flex;align-items:center;justify-content:space-between;
+    padding:20px clamp(20px,5vw,56px);
+    background:rgba(10,10,11,0.55);
+    backdrop-filter:blur(18px) saturate(140%);
+    -webkit-backdrop-filter:blur(18px) saturate(140%);
+    border-bottom:1px solid var(--hair);
+  }
+  .brand{font-family:var(--display);font-weight:700;font-size:18px;letter-spacing:0.06em;text-decoration:none;color:var(--paper);display:flex;align-items:center;gap:12px;}
+  .brand .dot{width:9px;height:9px;border-radius:50%;background:var(--success);box-shadow:0 0 12px var(--success);animation:pulse 2.4s infinite;}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+  .top-right{display:flex;align-items:center;gap:14px;}
+  .balance-pill{
+    display:flex;align-items:center;gap:10px;
+    padding:9px 16px;border-radius:999px;
+    border:1px solid var(--hair-strong);
+    background:rgba(255,255,255,0.04);
+    font-family:var(--display);font-size:14px;
+  }
+  .balance-pill .lbl{font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--steel);}
+  .balance-pill .val{font-weight:700;color:var(--paper);}
+  .user-chip{
+    display:flex;align-items:center;gap:10px;padding:6px 14px 6px 6px;
+    border-radius:999px;border:1px solid var(--hair);background:rgba(255,255,255,0.03);
+  }
+  .avatar{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#2a2a2e,#15151a);border:1px solid var(--hair-strong);display:flex;align-items:center;justify-content:center;font-family:var(--display);font-weight:700;font-size:13px;color:var(--mist);}
+  .user-chip .uname{font-family:var(--body);font-size:13px;max-width:120px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .logout-btn{
+    background:none;border:1px solid var(--hair);color:var(--steel);
+    padding:9px 16px;border-radius:999px;cursor:pointer;
+    font-family:var(--body);font-size:12px;letter-spacing:0.08em;text-transform:uppercase;
+    transition:all .3s var(--ease);
+  }
+  .logout-btn:hover{color:var(--paper);border-color:var(--hair-strong);background:rgba(255,255,255,0.04);}
+
+  /* Main */
+  main{position:relative;z-index:5;max-width:1240px;margin:0 auto;padding:108px clamp(20px,5vw,40px) 80px;}
+  .reveal{opacity:0;transform:translateY(16px);animation:reveal .7s var(--ease) forwards;}
+  @keyframes reveal{to{opacity:1;transform:none;}}
+
+  /* Hero greeting */
+  .hero{margin-bottom:34px;animation-delay:.05s;}
+  .hero .eyebrow{font-family:var(--hand);font-size:30px;color:var(--steel);display:block;line-height:1;}
+  .hero h1{font-family:var(--display);font-weight:500;font-size:clamp(30px,5vw,46px);letter-spacing:-0.01em;margin-top:6px;}
+  .hero p{font-family:var(--body);font-weight:300;font-size:15px;color:var(--steel);margin-top:8px;}
+
+  /* Layout grid */
+  .grid{display:grid;gap:20px;}
+  .row-stats{grid-template-columns:repeat(4,1fr);}
+  .row-mid{grid-template-columns:2fr 1fr;}
+  @media(max-width:980px){.row-stats{grid-template-columns:repeat(2,1fr);}.row-mid{grid-template-columns:1fr;}}
+  @media(max-width:560px){.row-stats{grid-template-columns:1fr 1fr;}}
+
+  /* Card */
+  .card{
+    position:relative;isolation:isolate;
+    background:linear-gradient(135deg, rgba(255,255,255,0.07), rgba(255,255,255,0.02));
+    backdrop-filter:blur(14px) saturate(130%);
+    -webkit-backdrop-filter:blur(14px) saturate(130%);
+    border:1px solid var(--hair);
+    border-radius:16px;
+    padding:24px;
+    box-shadow:0 18px 50px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.08);
+    transition:transform .35s var(--ease), border-color .35s var(--ease);
+  }
+  .card:hover{transform:translateY(-2px);border-color:var(--hair-strong);}
+  .card::before{content:'';position:absolute;inset:0;border-radius:16px;background:radial-gradient(circle at top left, rgba(255,255,255,0.10), transparent 45%);pointer-events:none;z-index:-1;}
+  .card h3{font-family:var(--display);font-weight:600;font-size:13px;letter-spacing:0.12em;text-transform:uppercase;color:var(--steel);}
+  .card .card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;}
+
+  /* Balance hero card */
+  .balance-card{display:flex;flex-direction:column;justify-content:space-between;min-height:188px;overflow:hidden;animation-delay:.1s;}
+  .balance-card .b-top{display:flex;justify-content:space-between;align-items:flex-start;}
+  .balance-card .b-label{font-family:var(--display);font-size:12px;letter-spacing:0.14em;text-transform:uppercase;color:var(--steel);}
+  .balance-card .b-amt{font-family:var(--display);font-weight:500;font-size:clamp(40px,7vw,58px);letter-spacing:-0.02em;margin-top:10px;line-height:1;}
+  .balance-card .b-amt .cur{font-size:0.46em;vertical-align:super;color:var(--steel);margin-right:6px;}
+  .balance-card .b-sub{font-family:var(--body);font-size:13px;color:var(--steel);margin-top:8px;}
+  .btn{
+    border:none;border-radius:8px;padding:12px 20px;cursor:pointer;
+    font-family:var(--body);font-size:12px;letter-spacing:0.12em;text-transform:uppercase;font-weight:500;
+    transition:all .3s var(--ease);
+  }
+  .btn-primary{background:var(--paper);color:var(--ink);}
+  .btn-primary:hover{background:var(--mist);transform:translateY(-1px);}
+  .btn-ghost{background:rgba(255,255,255,0.04);color:var(--paper);border:1px solid var(--hair-strong);}
+  .btn-ghost:hover{background:rgba(255,255,255,0.08);}
+  .btn:disabled{opacity:.5;cursor:wait;transform:none;}
+  .balance-card .b-actions{display:flex;gap:10px;margin-top:18px;}
+
+  /* Stat tiles */
+  .tile{animation-delay:calc(.1s + var(--i)*.06s);}
+  .tile .t-label{font-family:var(--display);font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:var(--steel);}
+  .tile .t-val{font-family:var(--display);font-weight:500;font-size:34px;margin-top:14px;line-height:1;}
+  .tile .t-sub{font-family:var(--body);font-size:12px;color:var(--steel);margin-top:8px;}
+  .tile .t-sub .up{color:var(--success);}
+  .tile .t-sub .down{color:var(--error);}
+
+  /* Chart */
+  .chart-card{animation-delay:.28s;}
+  .chart-wrap{position:relative;height:260px;}
+  .chart-legend{display:flex;gap:18px;margin-top:14px;flex-wrap:wrap;}
+  .chart-legend span{font-family:var(--body);font-size:12px;color:var(--steel);display:flex;align-items:center;gap:8px;}
+  .chart-legend i{width:10px;height:10px;border-radius:3px;display:block;}
+
+  /* Congestion */
+  .congestion-card{animation-delay:.34s;}
+  .station{padding:12px 0;border-bottom:1px solid var(--hair);}
+  .station:last-child{border-bottom:none;}
+  .station .s-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+  .station .s-name{font-family:var(--body);font-size:14px;}
+  .station .s-tag{font-family:var(--display);font-size:10px;letter-spacing:0.1em;text-transform:uppercase;padding:3px 9px;border-radius:999px;}
+  .tag-low{color:var(--success);background:rgba(110,231,183,0.08);border:1px solid rgba(110,231,183,0.2);}
+  .tag-med{color:var(--warning);background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.2);}
+  .tag-high{color:var(--error);background:rgba(252,165,165,0.08);border:1px solid rgba(252,165,165,0.2);}
+  .bar{height:5px;border-radius:999px;background:rgba(255,255,255,0.06);overflow:hidden;}
+  .bar i{display:block;height:100%;border-radius:999px;width:0;transition:width .9s var(--ease);}
+  .bar-low i{background:var(--success);}
+  .bar-med i{background:var(--warning);}
+  .bar-high i{background:var(--error);}
+
+  /* Bookings */
+  .bookings-card{animation-delay:.4s;margin-top:20px;}
+  .book-list{display:flex;flex-direction:column;}
+  .book-row{display:grid;grid-template-columns:1fr auto auto auto;gap:18px;align-items:center;padding:16px 0;border-bottom:1px solid var(--hair);}
+  .book-row:last-child{border-bottom:none;}
+  .book-row .route{display:flex;align-items:center;gap:10px;font-family:var(--body);font-size:15px;}
+  .book-row .route .arrow{color:var(--steel);}
+  .book-row .route .st{color:var(--paper);}
+  .book-row .meta{font-family:var(--body);font-size:12px;color:var(--steel);}
+  .book-row .date{font-family:var(--display);font-size:13px;color:var(--mist);min-width:120px;}
+  .book-row .fare{font-family:var(--display);font-weight:600;font-size:16px;min-width:70px;text-align:right;}
+  .badge{font-family:var(--display);font-size:10px;letter-spacing:0.1em;text-transform:uppercase;padding:4px 10px;border-radius:999px;}
+  .b-completed{color:var(--success);background:rgba(110,231,183,0.08);border:1px solid rgba(110,231,183,0.2);}
+  .b-scheduled{color:var(--warning);background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.2);}
+  .b-active{color:var(--accent);background:rgba(155,193,232,0.08);border:1px solid rgba(155,193,232,0.2);}
+  .b-cancelled{color:var(--error);background:rgba(252,165,165,0.08);border:1px solid rgba(252,165,165,0.2);}
+  @media(max-width:680px){
+    .book-row{grid-template-columns:1fr;gap:8px;}
+    .book-row .date,.book-row .fare{text-align:left;min-width:0;}
+  }
+  .empty{text-align:center;padding:40px 20px;color:var(--steel);font-family:var(--body);font-size:14px;}
+
+  /* Modal */
+  .modal-back{position:fixed;inset:0;z-index:200;background:rgba(5,5,6,0.6);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);display:none;align-items:center;justify-content:center;padding:24px;opacity:0;transition:opacity .3s var(--ease);}
+  .modal-back.show{display:flex;opacity:1;}
+  .modal{
+    width:100%;max-width:440px;
+    background:linear-gradient(135deg, rgba(255,255,255,0.10), rgba(255,255,255,0.03));
+    border:1px solid var(--hair-strong);border-radius:18px;padding:34px 30px;
+    box-shadow:0 30px 90px rgba(0,0,0,0.5);display:flex;flex-direction:column;gap:18px;
+    transform:scale(.95);transition:transform .3s var(--ease);
+  }
+  .modal-back.show .modal{transform:none;}
+  .modal h2{font-family:var(--display);font-weight:500;font-size:26px;}
+  .modal .m-eyebrow{font-family:var(--hand);font-size:22px;color:var(--steel);}
+  .modal .m-sub{font-family:var(--body);font-weight:300;font-size:13px;color:var(--steel);margin-top:-8px;}
+  .field-group{display:flex;flex-direction:column;gap:6px;}
+  .field-label{font-family:var(--display);font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:var(--steel);}
+  .field-input,.field-select{
+    width:100%;padding:13px 16px;background:rgba(255,255,255,0.03);border:1px solid var(--hair);border-radius:8px;
+    color:var(--paper);font-family:var(--body);font-size:15px;outline:none;transition:border-color .3s var(--ease),background .3s var(--ease);
+  }
+  .field-input:focus,.field-select:focus{border-color:var(--hair-strong);background:rgba(255,255,255,0.05);}
+  .field-select{appearance:none;-webkit-appearance:none;cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238a8d91' stroke-width='1.5'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 16px center;padding-right:40px;}
+  .field-select option{background:var(--ink-2);color:var(--paper);}
+  .fare-preview{font-family:var(--display);font-size:14px;color:var(--steel);display:flex;justify-content:space-between;padding:12px 16px;border:1px dashed var(--hair);border-radius:8px;}
+  .fare-preview .pv{color:var(--paper);font-weight:600;}
+  .modal-error{background:rgba(252,165,165,0.08);border:1px solid rgba(252,165,165,0.2);border-radius:8px;padding:11px 15px;font-family:var(--body);font-size:13px;color:var(--error);display:none;}
+  .modal-error.show{display:block;}
+  .modal-actions{display:flex;gap:10px;margin-top:4px;}
+  .modal-actions .btn{flex:1;}
+  .modal-close{position:absolute;top:18px;right:20px;background:none;border:none;color:var(--steel);font-size:22px;cursor:pointer;transition:color .3s var(--ease);}
+  .modal-close:hover{color:var(--paper);}
+
+  /* Toast */
+  .toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%) translateY(20px);z-index:300;background:var(--ink-3);border:1px solid var(--hair-strong);color:var(--paper);padding:13px 22px;border-radius:999px;font-family:var(--body);font-size:13px;opacity:0;transition:all .4s var(--ease);box-shadow:0 12px 40px rgba(0,0,0,0.4);pointer-events:none;}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+  .loader{position:fixed;inset:0;z-index:500;background:var(--ink);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:18px;transition:opacity .5s var(--ease);}
+  .loader.hide{opacity:0;pointer-events:none;}
+  .loader .l-eyebrow{font-family:var(--hand);font-size:26px;color:var(--steel);}
+  .loader .l-msg{font-family:var(--display);font-size:18px;color:var(--mist);}
+  .spinner{width:34px;height:34px;border:2px solid var(--hair);border-top-color:var(--paper);border-radius:50%;animation:spin .8s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  @media(max-width:560px){
+    .top-right .balance-pill .lbl{display:none;}
+    .user-chip .uname{display:none;}
+    main{padding-top:96px;}
+  }
+</style>
+</head>
+<body>
+
+  <div class="bg-grad"></div>
+  <canvas id="watermark-canvas"></canvas>
+
+  <!-- Loader -->
+  <div class="loader" id="loader">
+    <span class="l-eyebrow">metro nexus</span>
+    <div class="spinner"></div>
+    <span class="l-msg">Securing your line…</span>
+  </div>
+
+  <!-- Header -->
+  <header class="topbar">
+    <a href="Dashboard.html" class="brand"><span class="dot"></span>METRO&nbsp;NEXUS</a>
+    <div class="top-right">
+      <div class="balance-pill"><span class="lbl">Balance</span><span class="val" id="nav-balance">—</span></div>
+      <div class="user-chip"><div class="avatar" id="avatar">·</div><span class="uname" id="nav-name">—</span></div>
+      <button class="logout-btn" id="logout-btn">Log out</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero reveal">
+      <span class="eyebrow" id="greet-eyebrow">welcome back</span>
+      <h1 id="greet-title">Your dashboard</h1>
+      <p id="greet-sub">A single view of your balance, journeys and the live pulse of the line.</p>
+    </section>
+
+    <!-- Balance + Stats -->
+    <section class="grid row-stats" style="margin-bottom:20px;">
+      <div class="card balance-card reveal" style="grid-column:span 1;animation-delay:.1s;">
+        <div class="b-top">
+          <div>
+            <div class="b-label">Wallet Balance</div>
+            <div class="b-amt" id="balance-amt"><span class="cur">₹</span><span id="balance-num">0</span></div>
+            <div class="b-sub" id="balance-sub">Tap top-up to add funds.</div>
+          </div>
+        </div>
+        <div class="b-actions">
+          <button class="btn btn-primary" id="topup-open">Top up</button>
+          <button class="btn btn-ghost" id="book-open">New booking</button>
+        </div>
+      </div>
+
+      <div class="card tile reveal" style="--i:1">
+        <div class="t-label">Total Rides</div>
+        <div class="t-val" id="stat-rides">0</div>
+        <div class="t-sub">All-time journeys</div>
+      </div>
+      <div class="card tile reveal" style="--i:2">
+        <div class="t-label">This Month</div>
+        <div class="t-val" id="stat-month">0</div>
+        <div class="t-sub" id="stat-month-sub">rides in <span id="stat-month-name">—</span></div>
+      </div>
+      <div class="card tile reveal" style="--i:3">
+        <div class="t-label">Avg Fare</div>
+        <div class="t-val" id="stat-avg">₹0</div>
+        <div class="t-sub">per journey</div>
+      </div>
+    </section>
+
+    <!-- Traffic + Congestion -->
+    <section class="grid row-mid" style="margin-bottom:20px;">
+      <div class="card chart-card reveal">
+        <div class="card-head">
+          <h3>Ride Traffic — Last 14 Days</h3>
+          <span class="balance-pill" style="padding:6px 14px;"><span class="lbl">Live</span><span class="val" style="font-size:12px;" id="live-clock">--:--</span></span>
+        </div>
+        <div class="chart-wrap"><canvas id="traffic-chart"></canvas></div>
+        <div class="chart-legend">
+          <span><i style="background:#9bc1e8"></i>Rides per day</span>
+          <span><i style="background:rgba(255,255,255,0.18)"></i>Weekly average</span>
+        </div>
+      </div>
+
+      <div class="card congestion-card reveal">
+        <div class="card-head"><h3>Line Traffic</h3></div>
+        <div id="congestion-list"></div>
+      </div>
+    </section>
+
+    <!-- Bookings -->
+    <section class="card bookings-card reveal">
+      <div class="card-head">
+        <h3>Recent Bookings</h3>
+        <button class="btn btn-ghost" id="book-open-2">New booking</button>
+      </div>
+      <div class="book-list" id="book-list"></div>
+    </section>
+  </main>
+
+  <!-- New Booking Modal -->
+  <div class="modal-back" id="booking-modal">
+    <div class="modal" style="position:relative;">
+      <button class="modal-close" data-close="booking-modal">&times;</button>
+      <span class="m-eyebrow">plan a journey</span>
+      <h2>New Booking</h2>
+      <p class="m-sub">Pick your stops — fare is calculated by distance.</p>
+      <div class="modal-error" id="booking-error"></div>
+      <div class="field-group">
+        <label class="field-label">From</label>
+        <select class="field-select" id="bk-from"></select>
+      </div>
+      <div class="field-group">
+        <label class="field-label">To</label>
+        <select class="field-select" id="bk-to"></select>
+      </div>
+      <div class="fare-preview"><span>Fare</span><span class="pv" id="bk-fare">₹0</span></div>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" data-close="booking-modal">Cancel</button>
+        <button class="btn btn-primary" id="bk-confirm">Confirm &amp; Pay</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Top-up Modal -->
+  <div class="modal-back" id="topup-modal">
+    <div class="modal" style="position:relative;">
+      <button class="modal-close" data-close="topup-modal">&times;</button>
+      <span class="m-eyebrow">add funds</span>
+      <h2>Top Up Wallet</h2>
+      <p class="m-sub">Choose an amount to add to your balance.</p>
+      <div class="modal-error" id="topup-error"></div>
+      <div class="field-group">
+        <label class="field-label">Amount (₹)</label>
+        <input type="number" class="field-input" id="tp-amount" placeholder="e.g. 200" min="1" step="1">
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn btn-ghost" style="flex:1;min-width:80px;" data-tp="100">₹100</button>
+        <button class="btn btn-ghost" style="flex:1;min-width:80px;" data-tp="200">₹200</button>
+        <button class="btn btn-ghost" style="flex:1;min-width:80px;" data-tp="500">₹500</button>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" data-close="topup-modal">Cancel</button>
+        <button class="btn btn-primary" id="tp-confirm">Add to wallet</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <!-- Firebase (compat, matches auth.html) -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+  <!-- Chart.js + Three.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+  <script>
+  /* ============ FIREBASE ============ */
+  const firebaseConfig = {
+    apiKey: "AIzaSyBn556xKCIzqT2qBmhgONEpy6yr5V10vdI",
+    authDomain: "metro-nexus.firebaseapp.com",
+    projectId: "metro-nexus",
+    storageBucket: "metro-nexus.firebasestorage.app",
+    messagingSenderId: "275190918417",
+    appId: "1:275190918417:web:22b21a6bc111c0ec6230b0"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+  const db = firebase.firestore();
+
+  /* ============ METRO LINE DATA ============ */
+  const STATIONS = [
+    "Central Hub","Riverside","Market Square","University",
+    "Airport","Tech Park","Northgate","Harbor"
+  ];
+  function fareFor(from, to){
+    const i = STATIONS.indexOf(from), j = STATIONS.indexOf(to);
+    if(i<0||j<0||i===j) return 0;
+    const stops = Math.abs(i-j);
+    return 15 + stops * 8;
+  }
+
+  /* ============ STORE (Firestore w/ localStorage fallback) ============ */
+  const Store = {
+    useFS:false, uid:null,
+    lsProfile(){ return JSON.parse(localStorage.getItem('mn_profile_'+this.uid)||'null'); },
+    lsBookings(){ return JSON.parse(localStorage.getItem('mn_bookings_'+this.uid)||'[]'); },
+    saveProfile(p){ localStorage.setItem('mn_profile_'+this.uid, JSON.stringify(p)); },
+    saveBookings(b){ localStorage.setItem('mn_bookings_'+this.uid, JSON.stringify(b)); },
+
+    async init(user){
+      this.uid = user.uid;
+      try{
+        const ref = db.collection('users').doc(user.uid);
+        const snap = await Promise.race([
+          ref.get(),
+          new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),4500))
+        ]);
+        this.useFS = true;
+        if(!snap.exists){
+          await ref.set(this.seedProfile(user));
+          await this.seedBookingsFS(user.uid);
+        }
+      }catch(err){
+        this.useFS = false;
+        if(!this.lsProfile()){
+          this.saveProfile(this.seedProfile(user));
+          this.saveBookings(this.seedBookingsLS());
+        }
+      }
+    },
+
+    seedProfile(user){
+      return {
+        name:user.displayName||user.email?.split('@')[0]||'traveler',
+        email:user.email||'',
+        balance:240,
+        createdAt:Date.now()
+      };
+    },
+    seedBookingsLS(){
+      const arr=[]; const now=Date.now();
+      const picks=[["Central Hub","University"],["Riverside","Tech Park"],["Market Square","Harbor"],
+        ["Airport","Northgate"],["Central Hub","Tech Park"],["University","Harbor"],
+        ["Northgate","Central Hub"],["Riverside","Airport"],["Tech Park","Market Square"],
+        ["Central Hub","Harbor"],["University","Airport"],["Market Square","Northgate"]];
+      const statuses=["Completed","Completed","Completed","Completed","Completed","Scheduled","Completed","Active"];
+      for(let k=0;k<picks.length;k++){
+        const [f,t]=picks[k];
+        const dayAgo=Math.floor(Math.random()*13);
+        arr.push({
+          id:'seed_'+k+Math.random().toString(36).slice(2,7),
+          from:f, to:t, fare:fareFor(f,t),
+          status:statuses[k%statuses.length],
+          timestamp: now - dayAgo*86400000 - Math.floor(Math.random()*86400000)
+        });
+      }
+      arr.sort((a,b)=>b.timestamp-a.timestamp);
+      return arr;
+    },
+    async seedBookingsFS(uid){
+      const ls=this.seedBookingsLS();
+      const batch=db.batch();
+      ls.forEach(b=>{
+        const ref=db.collection('users').doc(uid).collection('bookings').doc();
+        batch.set(ref,{from:b.from,to:b.to,fare:b.fare,status:b.status,timestamp:b.timestamp});
+      });
+      await batch.commit();
+    },
+
+    async getProfile(){
+      if(this.useFS){
+        const s=await db.collection('users').doc(this.uid).get();
+        return s.exists?s.data():this.seedProfile({uid:this.uid});
+      }
+      return this.lsProfile();
+    },
+    async setBalance(newBal){
+      if(this.useFS){
+        await db.collection('users').doc(this.uid).set({balance:newBal,updatedAt:Date.now()},{merge:true});
+      }else{
+        const p=this.lsProfile()||{}; p.balance=newBal; this.saveProfile(p);
+      }
+    },
+    async addBooking(b){
+      if(this.useFS){
+        await db.collection('users').doc(this.uid).collection('bookings').add(b);
+      }else{
+        const arr=this.lsBookings(); arr.unshift(b); this.saveBookings(arr);
+      }
+    },
+    onBookings(cb){
+      if(this.useFS){
+        return db.collection('users').doc(this.uid).collection('bookings')
+          .onSnapshot(snap=>{
+            const arr=[]; snap.forEach(d=>arr.push({id:d.id,...d.data()}));
+            arr.sort((a,b)=>(b.timestamp||0)-(a.timestamp||0));
+            cb(arr);
+          }, ()=>{ this.useFS=false; cb(this.lsBookings()); });
+      }else{
+        cb(this.lsBookings());
+        return ()=>{};
+      }
+    }
+  };
+
+  /* ============ STATE ============ */
+  let currentUser=null, profile=null, bookings=[], chart=null, unsub=null;
+
+  /* ============ AUTH GUARD ============ */
+  auth.onAuthStateChanged(async (user)=>{
+    if(!user){ window.location.href='auth.html'; return; }
+    currentUser=user;
+    await Store.init(user);
+    profile=await Store.getProfile();
+    hydrateIdentity(user, profile);
+    unsub=Store.onBookings((arr)=>{ bookings=arr; render(); });
+    setTimeout(()=>document.getElementById('loader').classList.add('hide'),450);
+  });
+
+  /* ============ IDENTITY ============ */
+  function hydrateIdentity(user, p){
+    const name=p?.name||user.displayName||user.email?.split('@')[0]||'traveler';
+    document.getElementById('nav-name').textContent=name;
+    document.getElementById('avatar').textContent=(name[0]||'·').toUpperCase();
+    const hr=new Date().getHours();
+    const part=hr<12?'good morning':hr<18?'good afternoon':'good evening';
+    document.getElementById('greet-eyebrow').textContent=part;
+    document.getElementById('greet-title').textContent='Hello, '+name;
+  }
+
+  /* ============ RENDER ============ */
+  function render(){
+    renderBalance();
+    renderStats();
+    renderChart();
+    renderCongestion();
+    renderBookings();
+  }
+
+  function renderBalance(){
+    const bal=profile?.balance||0;
+    document.getElementById('balance-num').textContent=Math.round(bal);
+    document.getElementById('nav-balance').textContent='₹'+Math.round(bal);
+    document.getElementById('balance-sub').textContent=
+      bal>0?'Available across all Metro Nexus lines.':'Your wallet is empty — top up to ride.';
+  }
+
+  function renderStats(){
+    const completed=bookings.filter(b=>b.status==='Completed');
+    document.getElementById('stat-rides').textContent=animateTo('stat-rides', bookings.length);
+    const now=new Date(); const m=now.getMonth();
+    const monthBookings=bookings.filter(b=>{const d=new Date(b.timestamp||0);return d.getMonth()===m&&d.getFullYear()===now.getFullYear();});
+    document.getElementById('stat-month').textContent=monthBookings.length;
+    document.getElementById('stat-month-name').textContent=now.toLocaleString('en-US',{month:'long'});
+    const avg=completed.length?Math.round(completed.reduce((s,b)=>s+(b.fare||0),0)/completed.length):0;
+    document.getElementById('stat-avg').textContent='₹'+animateTo('stat-avg', avg, true);
+  }
+
+  function animateTo(id, target, raw){
+    const el=document.getElementById(id);
+    const cur=parseInt((el.dataset.v||'0'),10)||0;
+    const start=performance.now(), dur=700;
+    function tick(t){
+      const p=Math.min(1,(t-start)/dur);
+      const v=Math.round(cur+(target-cur)*p);
+      el.textContent=raw?('₹'+v):v;
+      if(p<1)requestAnimationFrame(tick); else el.dataset.v=target;
+    }
+    requestAnimationFrame(tick);
+    return target;
+  }
+
+  function renderChart(){
+    const days=[];
+    for(let i=13;i>=0;i--){
+      const d=new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate()-i);
+      days.push(d.getTime());
+    }
+    const counts=days.map(start=>{
+      const end=start+86400000;
+      return bookings.filter(b=>{const t=b.timestamp||0;return t>=start&&t<end;}).length;
+    });
+    const avgLine=counts.map(()=>Math.round(counts.reduce((a,c)=>a+c,0)/counts.length));
+
+    const labels=days.map(t=>new Date(t).toLocaleDateString('en-US',{month:'short',day:'numeric'}));
+    const ctx=document.getElementById('traffic-chart').getContext('2d');
+    const grad=ctx.createLinearGradient(0,0,0,260);
+    grad.addColorStop(0,'rgba(155,193,232,0.35)');
+    grad.addColorStop(1,'rgba(155,193,232,0)');
+
+    if(chart){ chart.data.labels=labels; chart.data.datasets[0].data=counts; chart.data.datasets[1].data=avgLine; chart.update(); return; }
+    chart=new Chart(ctx,{
+      type:'line',
+      data:{labels,datasets:[
+        {label:'Rides',data:counts,borderColor:'#9bc1e8',backgroundColor:grad,fill:true,tension:.4,borderWidth:2,pointRadius:3,pointBackgroundColor:'#9bc1e8',pointBorderColor:'rgba(255,255,255,0.2)',pointHoverRadius:6},
+        {label:'Avg',data:avgLine,borderColor:'rgba(255,255,255,0.18)',borderWidth:1.5,borderDash:[5,5],fill:false,tension:0,pointRadius:0}
+      ]},
+      options:{
+        responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:false},tooltip:{backgroundColor:'#141416',titleColor:'#f5f5f4',bodyColor:'#c4c6c9',borderColor:'rgba(255,255,255,0.16)',borderWidth:1,padding:12,displayColors:false}},
+        scales:{
+          x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#8a8d91',font:{family:"'Bodoni Moda',serif",size:11}}},
+          y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#8a8d91',font:{family:"'Bodoni Moda',serif",size:11},stepSize:1,precision:0},beginAtZero:true}
+        }
+      }
+    });
+  }
+
+  function renderCongestion(){
+    const now=Date.now(), day=86400000;
+    const counts=STATIONS.map(s=>{
+      return bookings.filter(b=>{
+        const t=b.timestamp||0; const recent=t>now-day;
+        return recent&&(b.from===s||b.to===s);
+      }).length;
+    });
+    const max=Math.max(1,...counts);
+    const list=document.getElementById('congestion-list');
+    list.innerHTML=STATIONS.map((s,i)=>{
+      const c=counts[i]; const ratio=c/max;
+      let tier='low', tag='Low';
+      if(ratio>0.66){tier='high';tag='High';}
+      else if(ratio>0.33){tier='med';tag='Medium';}
+      const w=Math.max(8,Math.round(ratio*100));
+      return `<div class="station">
+        <div class="s-row"><span class="s-name">${s}</span><span class="s-tag tag-${tier}">${tag}</span></div>
+        <div class="bar bar-${tier}"><i style="width:${w}%"></i></div>
+      </div>`;
+    }).join('');
+  }
+
+  function renderBookings(){
+    const list=document.getElementById('book-list');
+    if(!bookings.length){
+      list.innerHTML=`<div class="empty">No bookings yet. Tap “New booking” to take your first ride.</div>`;
+      return;
+    }
+    list.innerHTML=bookings.slice(0,20).map(b=>{
+      const d=new Date(b.timestamp||0);
+      const date=d.toLocaleDateString('en-US',{month:'short',day:'numeric'})+', '+d.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+      const cls='b-'+(b.status||'completed').toLowerCase();
+      return `<div class="book-row">
+        <div>
+          <div class="route"><span class="st">${b.from}</span><span class="arrow">→</span><span class="st">${b.to}</span></div>
+          <div class="meta">${date}</div>
+        </div>
+        <div></div>
+        <span class="badge ${cls}">${b.status||'Completed'}</span>
+        <div class="fare">₹${b.fare||0}</div>
+      </div>`;
+    }).join('');
+  }
+
+  /* ============ LIVE CLOCK ============ */
+  setInterval(()=>{
+    const d=new Date();
+    document.getElementById('live-clock').textContent=d.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+  },1000);
+
+  /* ============ BOOKING MODAL ============ */
+  const bkFrom=document.getElementById('bk-from'), bkTo=document.getElementById('bk-to');
+  STATIONS.forEach(s=>{
+    bkFrom.add(new Option(s,s)); bkTo.add(new Option(s,s));
+  });
+  bkTo.selectedIndex=3;
+  function updateFare(){
+    const f=fareFor(bkFrom.value,bkTo.value);
+    document.getElementById('bk-fare').textContent='₹'+f;
+  }
+  bkFrom.addEventListener('change',updateFare);
+  bkTo.addEventListener('change',updateFare);
+  updateFare();
+
+  function openModal(id){ document.getElementById(id).classList.add('show'); }
+  function closeModal(id){ document.getElementById(id).classList.remove('show'); }
+  document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',()=>closeModal(b.dataset.close)));
+  document.querySelectorAll('.modal-back').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('show');}));
+
+  document.getElementById('book-open').addEventListener('click',()=>openModal('booking-modal'));
+  document.getElementById('book-open-2').addEventListener('click',()=>openModal('booking-modal'));
+  document.getElementById('topup-open').addEventListener('click',()=>openModal('topup-modal'));
+
+  document.getElementById('bk-confirm').addEventListener('click', async ()=>{
+    const err=document.getElementById('booking-error');
+    err.classList.remove('show');
+    const from=bkFrom.value, to=bkTo.value;
+    if(from===to){ err.textContent='Origin and destination must differ.'; err.classList.add('show'); return; }
+    const fare=fareFor(from,to);
+    if((profile?.balance||0)<fare){ err.textContent='Insufficient balance. Please top up your wallet.'; err.classList.add('show'); return; }
+    const btn=document.getElementById('bk-confirm'); btn.disabled=true; btn.textContent='Processing…';
+    try{
+      await Store.addBooking({from,to,fare,status:'Active',timestamp:Date.now()});
+      const newBal=(profile.balance||0)-fare;
+      await Store.setBalance(newBal);
+      profile.balance=newBal;
+      renderBalance();
+      closeModal('booking-modal');
+      toast('Booking confirmed — ₹'+fare+' deducted.');
+    }catch(e){
+      err.textContent='Could not complete booking. Try again.'; err.classList.add('show');
+    }finally{ btn.disabled=false; btn.textContent='Confirm & Pay'; }
+  });
+
+  /* ============ TOP-UP MODAL ============ */
+  document.querySelectorAll('[data-tp]').forEach(b=>b.addEventListener('click',()=>{
+    document.getElementById('tp-amount').value=b.dataset.tp;
+  }));
+  document.getElementById('tp-confirm').addEventListener('click', async ()=>{
+    const err=document.getElementById('topup-error'); err.classList.remove('show');
+    const amt=parseInt(document.getElementById('tp-amount').value,10);
+    if(!amt||amt<=0){ err.textContent='Enter a valid amount.'; err.classList.add('show'); return; }
+    const btn=document.getElementById('tp-confirm'); btn.disabled=true; btn.textContent='Processing…';
+    try{
+      const newBal=(profile.balance||0)+amt;
+      await Store.setBalance(newBal);
+      profile.balance=newBal;
+      renderBalance();
+      closeModal('topup-modal');
+      document.getElementById('tp-amount').value='';
+      toast('₹'+amt+' added to your wallet.');
+    }catch(e){
+      err.textContent='Could not top up. Try again.'; err.classList.add('show');
+    }finally{ btn.disabled=false; btn.textContent='Add to wallet'; }
+  });
+
+  /* ============ TOAST ============ */
+  let toastTimer=null;
+  function toast(msg){
+    const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
+    clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('show'),2600);
+  }
+
+  /* ============ LOGOUT ============ */
+  document.getElementById('logout-btn').addEventListener('click',()=>{
+    if(unsub)unsub();
+    auth.signOut().then(()=>window.location.href='auth.html');
+  });
+
+  /* ============ 3D WATERMARK ============ */
+  (function initWatermark(){
+    if(!window.THREE)return;
+    const canvas=document.getElementById('watermark-canvas');
+    const r=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});
+    r.setPixelRatio(Math.min(window.devicePixelRatio,2)); r.setSize(500,500);
+    const scene=new THREE.Scene();
+    const cam=new THREE.PerspectiveCamera(38,1,0.1,100); cam.position.set(0,0,8);
+    const key=new THREE.DirectionalLight(0xffffff,1.4); key.position.set(4,5,6); scene.add(key);
+    const fill=new THREE.DirectionalLight(0x8a8d91,0.5); fill.position.set(-5,-2,3); scene.add(fill);
+    scene.add(new THREE.AmbientLight(0x404040,0.6));
+    const ring=new THREE.Group(); ring.scale.set(0.3,0.3,0.3);
+    const band=new THREE.Mesh(new THREE.TorusGeometry(1.5,0.55,48,128),
+      new THREE.MeshPhysicalMaterial({color:0x1a1a1c,metalness:0.85,roughness:0.28,clearcoat:0.6,clearcoatRoughness:0.25,reflectivity:0.5}));
+    band.rotation.x=Math.PI/2; ring.add(band);
+    const crest=new THREE.Mesh(new THREE.IcosahedronGeometry(0.85,0),
+      new THREE.MeshPhysicalMaterial({color:0x232326,metalness:0.9,roughness:0.2,clearcoat:0.8}));
+    crest.position.z=0.55; crest.scale.set(1,1,0.5); ring.add(crest);
+    const wire=new THREE.LineSegments(new THREE.EdgesGeometry(crest.geometry),
+      new THREE.LineBasicMaterial({color:0x8a8d91,transparent:true,opacity:0.6}));
+    wire.scale.copy(crest.scale); wire.position.copy(crest.position); ring.add(wire);
+    ring.rotation.x=0.3; scene.add(ring);
+    (function animate(){requestAnimationFrame(animate);ring.rotation.y+=0.003;r.render(scene,cam);})();
+  })();
+  </script>
+</body>
+</html>
