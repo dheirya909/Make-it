@@ -6,237 +6,176 @@
 <title>Metro Nexus — Account</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..900;1,6..96,400..900&family=Fleur+De+Leah&family=PT+Serif:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&display=swap" rel="stylesheet">
 <link rel="shortcut icon" href="/logo_wo_bg.png" type="image/x-icon">
 <style>
   :root{
-    --ink:#0a0a0b;
-    --ink-2:#141416;
-    --steel:#8a8d91;
-    --mist:#c4c6c9;
-    --paper:#f5f5f4;
-    --hair:rgba(255,255,255,0.08);
-    --hair-strong:rgba(255,255,255,0.16);
-    --display:'PT Serif',serif;
-    --body:'Bodoni Moda',serif;
-    --hand:'Fleur De Leah',cursive;
+    --ink:#0a0a0b; --ink-2:#141416;
+    --steel:#8a8d91; --mist:#c4c6c9; --paper:#f5f5f4;
+    --hair:rgba(255,255,255,0.08); --hair-strong:rgba(255,255,255,0.16);
+    --font:'Cormorant Garamond', serif;
     --ease:cubic-bezier(.16,.8,.24,1);
+    --glass-bg:linear-gradient(135deg, rgba(255,255,255,0.09) 0%, rgba(255,255,255,0.03) 55%, rgba(255,255,255,0.06) 100%);
+    --glass-border:1px solid rgba(255,255,255,0.14);
+    --glass-shadow:0 30px 90px -20px rgba(0,0,0,0.55), 0 8px 24px -8px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.18), inset 0 -1px 0 rgba(255,255,255,0.04);
   }
   *{margin:0;padding:0;box-sizing:border-box;}
   body{
-    background:var(--ink);
-    color:var(--paper);
-    font-family:var(--body);
-    overflow:hidden;
+    background:var(--ink); color:var(--paper);
+    font-family:var(--font); overflow-x:hidden;
     -webkit-font-smoothing:antialiased;
-    min-height:100vh;
+    min-height:100vh; cursor:none; position:relative;
   }
-  ::selection{background:var(--paper);color:var(--ink);}
+  a, button, input{cursor:none;}
+  ::selection{background:var(--paper); color:var(--ink);}
 
-  /* 3D watermark canvas */
-  #watermark-canvas{
-    position:fixed;
-    top:50%; left:50%;
-    transform:translate(-50%,-50%);
-    width:400px; height:400px;
-    z-index:0;
-    opacity:0.12;
-    pointer-events:none;
+  #ambient-glow{
+    position:fixed; inset:-20vmax; z-index:0; pointer-events:none;
+    background:
+      radial-gradient(40vmax 40vmax at 18% 22%, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.06) 35%, rgba(255,255,255,0) 65%),
+      radial-gradient(50vmax 50vmax at 82% 78%, rgba(255,255,255,0.14) 0%, rgba(255,255,255,0.04) 40%, rgba(255,255,255,0) 70%),
+      radial-gradient(35vmax 35vmax at 60% 10%, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0) 60%);
+    filter:blur(30px); animation:glowDrift 22s ease-in-out infinite alternate;
+    mix-blend-mode:screen; opacity:0.9;
   }
-
-  /* Floating 3D object */
-  #float-object-host{
-    position:fixed;
-    inset:0;
-    width:100vw;
-    height:100vh;
-    z-index:1;
-    opacity:0.95;
-    pointer-events:none;
-    filter:drop-shadow(0 24px 90px rgba(0,0,0,0.55));
-  }
-  #float-object-host canvas{
-    width:100% !important;
-    height:100% !important;
-    display:block;
+  @keyframes glowDrift{
+    0%{transform:translate3d(-3vmax,-2vmax,0) scale(1);}
+    50%{transform:translate3d(4vmax,3vmax,0) scale(1.08);}
+    100%{transform:translate3d(-2vmax,4vmax,0) scale(0.96);}
   }
 
-  /* Nav */
-  .auth-nav{
-    position:fixed; top:0; left:0; right:0; z-index:100;
-    display:flex; justify-content:space-between; align-items:center;
-    padding:28px 5vw;
-  }
-  .auth-nav a{
-    color:var(--paper); text-decoration:none;
-    font-family:var(--display); font-weight:600;
-    font-size:15px; letter-spacing:0.06em;
-  }
-  .auth-nav .back-link{
-    font-size:12px; letter-spacing:0.12em; text-transform:uppercase;
-    font-weight:400; opacity:0.6; transition:opacity .3s var(--ease);
-  }
-  .auth-nav .back-link:hover{opacity:1;}
+  #watermark-canvas{position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); width:520px; height:520px; z-index:1; opacity:0.09; pointer-events:none;}
+  #fluid-canvas{position:fixed; inset:0; width:100vw; height:100vh; z-index:9000; pointer-events:none; mix-blend-mode:difference;}
 
-  /* Auth card */
-  .auth-wrap{
-    position:relative; z-index:10;
-    min-height:100vh;
-    display:flex; align-items:center; justify-content:center;
-    padding:80px 24px;
+  .auth-nav{position:fixed; top:22px; left:0; right:0; z-index:100; display:flex; justify-content:space-between; align-items:center; padding:0 5vw;}
+  .auth-nav .nav-pill{
+    display:inline-flex; align-items:center;
+    padding:10px 20px; border-radius:100px;
+    background:var(--glass-bg); border:var(--glass-border);
+    backdrop-filter:blur(18px) saturate(140%);
+    box-shadow:0 12px 40px -12px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.14);
+    text-decoration:none; color:var(--paper);
+    font-family:var(--font); font-weight:600; font-size:15px; letter-spacing:0.08em;
+    transition:transform .35s var(--ease), background .35s var(--ease);
   }
+  .auth-nav .nav-pill:hover{transform:translateY(-1px); background:linear-gradient(135deg, rgba(255,255,255,0.14) 0%, rgba(255,255,255,0.05) 60%, rgba(255,255,255,0.09) 100%);}
+  .auth-nav .back-link{font-size:11px; letter-spacing:0.22em; text-transform:uppercase; font-weight:400; padding:8px 16px;}
+
+  .auth-wrap{position:relative; z-index:10; min-height:100vh; display:flex; align-items:center; justify-content:center; padding:110px 24px 60px;}
+
   .auth-card{
-    width:100%; max-width:420px;
-    position:relative; isolation:isolate;
-    background:linear-gradient(135deg, rgba(255,255,255,0.16), rgba(255,255,255,0.05));
-    backdrop-filter:blur(5px) saturate(140%);
-    -webkit-backdrop-filter:blur(24px) saturate(140%);
-    border:1px solid rgba(255,255,255,0.16);
-    border-radius:18px;
-    padding:48px 40px;
-    display:flex; flex-direction:column;
-    gap:20px;
-    box-shadow:0 24px 80px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.12);
-    overflow:hidden;
+    width:100%; max-width:460px; position:relative; isolation:isolate;
+    background:var(--glass-bg);
+    backdrop-filter:blur(28px) saturate(160%);
+    border:var(--glass-border); border-radius:22px;
+    padding:52px 44px 46px; display:flex; flex-direction:column; gap:22px;
+    box-shadow:var(--glass-shadow); overflow:hidden;
   }
   .auth-card::before{
-    content:'';
-    position:absolute; inset:0;
-    background:radial-gradient(circle at top left, rgba(255,255,255,0.18), transparent 42%);
-    pointer-events:none;
-    z-index:-1;
+    content:''; position:absolute; inset:0;
+    background:
+      radial-gradient(circle at 8% 0%, rgba(255,255,255,0.22), transparent 45%),
+      radial-gradient(circle at 100% 100%, rgba(205,225,255,0.10), transparent 55%);
+    pointer-events:none; z-index:-1;
   }
-  .auth-header{
-    text-align:center;
-    margin-bottom:8px;
+  .auth-card::after{
+    content:''; position:absolute; inset:0; border-radius:22px; padding:1px;
+    background:linear-gradient(180deg, rgba(255,255,255,0.35), rgba(255,255,255,0) 40%, rgba(255,255,255,0.08) 100%);
+    -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite:xor; mask-composite:exclude; pointer-events:none;
   }
-  .auth-eyebrow{
-    font-family:var(--hand); font-size:24px; color:var(--steel);
-    display:block; margin-bottom:4px;
-  }
-  .auth-title{
-    font-family:var(--display); font-weight:500;
-    font-size:32px; letter-spacing:-0.01em; color:var(--paper);
-  }
-  .auth-sub{
-    font-family:var(--body); font-weight:300;
-    font-size:14px; color:var(--steel);
-    text-align:center; margin-top:-4px; margin-bottom:8px;
-    line-height:1.5;
-  }
-  .field-group{
-    display:flex; flex-direction:column; gap:6px;
-  }
-  .field-label{
-    font-family:var(--display); font-size:11px;
-    letter-spacing:0.14em; text-transform:uppercase; color:var(--steel);
-  }
+
+  .auth-header{text-align:center; margin-bottom:2px;}
+  .auth-eyebrow{font-family:var(--font); font-style:italic; font-weight:300; font-size:16px; letter-spacing:0.18em; color:var(--mist); display:block; margin-bottom:6px; text-transform:lowercase; opacity:0.85;}
+  .auth-title{font-family:var(--font); font-weight:500; font-size:44px; line-height:1; letter-spacing:-0.01em; color:var(--paper); text-shadow:0 2px 30px rgba(0,0,0,0.4);}
+  .auth-sub{font-family:var(--font); font-weight:300; font-size:15px; color:var(--steel); text-align:center; margin-top:2px; line-height:1.55; max-width:340px; margin-left:auto; margin-right:auto;}
+
+  .push-text{display:inline-block; white-space:pre-wrap;}
+  .push-text .letter{display:inline-block; will-change:transform; transition:transform 480ms cubic-bezier(.22,.9,.28,1);}
+
+  .field-group{display:flex; flex-direction:column; gap:8px;}
+  .field-label{font-family:var(--font); font-weight:500; font-size:11px; letter-spacing:0.24em; text-transform:uppercase; color:var(--mist); padding-left:2px;}
   .field-input{
-    width:100%;
-    padding:14px 16px;
-    background:rgba(255,255,255,0.03);
-    border:1px solid var(--hair);
-    border-radius:6px;
-    color:var(--paper);
-    font-family:var(--body); font-size:15px;
-    outline:none;
-    transition:border-color .3s var(--ease), background .3s var(--ease);
+    width:100%; padding:15px 18px;
+    background:linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+    border:1px solid rgba(255,255,255,0.10); border-radius:12px;
+    color:var(--paper); font-family:var(--font); font-size:17px;
+    outline:none; backdrop-filter:blur(6px);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,0.08), 0 4px 14px -8px rgba(0,0,0,0.5);
+    transition:border-color .35s var(--ease), background .35s var(--ease), box-shadow .35s var(--ease);
   }
   .field-input:focus{
-    border-color:var(--hair-strong);
-    background:rgba(255,255,255,0.05);
+    border-color:rgba(255,255,255,0.28);
+    background:linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.04));
+    box-shadow:inset 0 1px 0 rgba(255,255,255,0.14), 0 6px 22px -8px rgba(255,255,255,0.10), 0 0 0 3px rgba(255,255,255,0.05);
   }
-  .field-input::placeholder{color:var(--steel); opacity:0.5;}
+  .field-input::placeholder{color:var(--steel); opacity:0.45; font-style:italic;}
 
   .auth-btn{
-    margin-top:8px;
-    padding:15px;
-    border-radius:6px;
-    border:none;
-    background:var(--paper);
-    color:var(--ink);
-    font-family:var(--body); font-size:13px;
-    letter-spacing:0.14em; text-transform:uppercase;
-    font-weight:500;
-    cursor:pointer;
-    transition:background .3s var(--ease), transform .3s var(--ease);
+    margin-top:10px; padding:16px 24px; border-radius:100px;
+    border:1px solid rgba(255,255,255,0.35);
+    background:linear-gradient(180deg, rgba(255,255,255,0.94), rgba(230,230,228,0.86));
+    color:var(--ink); font-family:var(--font); font-size:15px;
+    letter-spacing:0.14em; text-transform:uppercase; font-weight:500;
+    cursor:none; backdrop-filter:blur(12px);
+    box-shadow:0 14px 34px -12px rgba(255,255,255,0.35), 0 6px 18px -8px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.9);
+    transition:transform .35s var(--ease), box-shadow .35s var(--ease), background .35s var(--ease);
   }
-  .auth-btn:hover{background:var(--mist); transform:translateY(-1px);}
-  .auth-btn:disabled{opacity:0.5; cursor:wait; transform:none;}
+  .auth-btn:hover{transform:translateY(-2px); background:linear-gradient(180deg, #ffffff, #efeeeb); box-shadow:0 18px 44px -12px rgba(255,255,255,0.45), 0 10px 22px -8px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,1);}
+  .auth-btn:disabled{opacity:0.55; cursor:wait; transform:none;}
+  .auth-btn.ghost{background:var(--glass-bg); color:var(--paper); border:var(--glass-border); box-shadow:0 12px 34px -12px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.14);}
+  .auth-btn.ghost:hover{background:linear-gradient(180deg, rgba(255,255,255,0.16), rgba(255,255,255,0.06));}
 
-  .auth-error{
-    background:rgba(255,80,80,0.08);
-    border:1px solid rgba(255,80,80,0.2);
-    border-radius:6px;
-    padding:12px 16px;
-    font-family:var(--body); font-size:13px;
-    color:#ff9999;
-    display:none;
-  }
+  .auth-error{background:linear-gradient(180deg, rgba(255,120,120,0.10), rgba(255,120,120,0.04)); border:1px solid rgba(255,120,120,0.22); backdrop-filter:blur(10px); border-radius:12px; padding:12px 16px; font-family:var(--font); font-size:15px; font-style:italic; color:#ffbcbc; display:none; box-shadow:inset 0 1px 0 rgba(255,255,255,0.06);}
   .auth-error.show{display:block;}
 
-  .auth-switch{
-    text-align:center;
-    font-family:var(--body); font-size:13px; color:var(--steel);
-    margin-top:4px;
-  }
-  .auth-switch a{
-    color:var(--paper); text-decoration:none;
-    border-bottom:1px solid var(--hair-strong);
-    padding-bottom:1px;
-    transition:border-color .3s var(--ease);
-  }
+  .auth-switch{text-align:center; font-family:var(--font); font-size:15px; color:var(--steel); margin-top:6px; font-style:italic; font-weight:300; letter-spacing:0.02em;}
+  .auth-switch a{color:var(--paper); text-decoration:none; border-bottom:1px solid rgba(255,255,255,0.35); padding-bottom:1px; font-style:normal; font-weight:400; transition:border-color .3s var(--ease);}
   .auth-switch a:hover{border-color:var(--paper);}
 
-  .auth-success{
-    display:none;
-    flex-direction:column; align-items:center; gap:16px;
-    text-align:center;
-  }
+  .auth-success{display:none; flex-direction:column; align-items:center; gap:18px; text-align:center; padding:8px 0;}
   .auth-success.show{display:flex;}
-  .auth-success .check{
-    width:56px; height:56px; border-radius:50%;
-    border:2px solid var(--paper);
-    display:flex; align-items:center; justify-content:center;
-    font-size:28px; color:var(--paper);
-  }
-  .auth-success p{
-    font-family:var(--display); font-size:20px; color:var(--paper);
-  }
+  .auth-success .check{width:68px; height:68px; border-radius:50%; background:var(--glass-bg); border:var(--glass-border); backdrop-filter:blur(14px); display:flex; align-items:center; justify-content:center; font-size:30px; color:var(--paper); box-shadow:0 12px 34px -8px rgba(255,255,255,0.15), inset 0 1px 0 rgba(255,255,255,0.25);}
+  .auth-success p{font-family:var(--font); font-weight:500; font-size:24px; color:var(--paper);}
 
-  /* Toggle between login/signup */
-  .auth-form{display:flex; flex-direction:column; gap:20px;}
+  .auth-form{
+    display:flex; flex-direction:column; gap:22px;
+    transition: opacity 420ms var(--ease), transform 520ms var(--ease), filter 420ms var(--ease);
+    will-change: opacity, transform, filter;
+  }
   .auth-form.hidden{display:none;}
+  .auth-form.leaving{
+    opacity:0; transform:translateY(-8px) scale(0.985); filter:blur(6px); pointer-events:none;
+  }
+  .auth-form.entering{
+    opacity:0; transform:translateY(10px) scale(0.985); filter:blur(6px);
+  }
 
   @media (max-width:520px){
-    .auth-card{padding:36px 24px;}
-    #watermark-canvas{width:400px; height:400px;}
+    .auth-card{padding:40px 26px; border-radius:20px;}
+    .auth-title{font-size:38px;}
+    body{cursor:auto;} #fluid-canvas{display:none;} #ambient-glow{opacity:0.55;}
   }
 </style>
 </head>
 <body>
 
-  <!-- 3D watermark -->
+  <div id="ambient-glow" aria-hidden="true"></div>
   <canvas id="watermark-canvas"></canvas>
+  <canvas id="fluid-canvas"></canvas>
 
-  <!-- Floating 3D object -->
-  <div id="float-object-host" aria-hidden="true"></div>
-
-  <!-- Nav -->
   <div class="auth-nav">
-    <a href="index.html">METRO&nbsp;NEXUS</a>
-    <a href="index.html" class="back-link">Back</a>
+    <a href="index.html" class="nav-pill">METRO&nbsp;NEXUS</a>
+    <a href="index.html" class="nav-pill back-link">← Back</a>
   </div>
 
-  <!-- Auth -->
   <div class="auth-wrap">
     <div class="auth-card">
 
-      <!-- LOGIN -->
       <div class="auth-form" id="login-form">
         <div class="auth-header">
-          <span class="auth-eyebrow">welcome back</span>
-          <h2 class="auth-title">Log In</h2>
+          <span class="auth-eyebrow push-text">welcome back</span>
+          <h2 class="auth-title push-text">Log In</h2>
         </div>
         <p class="auth-sub">Sign in to manage your passes and continue your journey.</p>
         <div class="auth-error" id="login-error"></div>
@@ -252,11 +191,10 @@
         <p class="auth-switch">New here? <a href="#" id="goto-signup">Create an account</a></p>
       </div>
 
-      <!-- SIGNUP -->
       <div class="auth-form hidden" id="signup-form">
         <div class="auth-header">
-          <span class="auth-eyebrow">begin your journey</span>
-          <h2 class="auth-title">Sign Up</h2>
+          <span class="auth-eyebrow push-text">begin your journey</span>
+          <h2 class="auth-title push-text">Sign Up</h2>
         </div>
         <p class="auth-sub">Create an account to start your first trip on the Metro Nexus line.</p>
         <div class="auth-error" id="signup-error"></div>
@@ -276,26 +214,21 @@
         <p class="auth-switch">Already have an account? <a href="#" id="goto-login">Log in</a></p>
       </div>
 
-      <!-- SUCCESS -->
       <div class="auth-success" id="auth-success">
         <div class="check">&#10003;</div>
-        <p id="success-msg">Welcome aboard.</p>
-        <button class="auth-btn" style="margin-top:8px;" onclick="window.location.href='Dashboard.html'">Enter Metro Nexus</button>
+        <p id="success-msg" class="push-text">Welcome aboard.</p>
+        <button class="auth-btn ghost" style="margin-top:4px;" onclick="window.location.href='dashboard.html'">Enter Metro Nexus</button>
       </div>
 
     </div>
   </div>
 
-  <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-
-  <!-- Three.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js"></script>
 
   <script>
-    /* ============ FIREBASE ============ */
+    /* ========== FIREBASE ========== */
     const firebaseConfig = {
       apiKey: "AIzaSyBn556xKCIzqT2qBmhgONEpy6yr5V10vdI",
       authDomain: "metro-nexus.firebaseapp.com",
@@ -304,279 +237,312 @@
       messagingSenderId: "275190918417",
       appId: "1:275190918417:web:22b21a6bc111c0ec6230b0"
     };
-
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
 
-    /* ============ MODE DETECTION ============ */
     const params = new URLSearchParams(window.location.search);
     const mode = params.get('mode') || 'login';
-
     const loginForm = document.getElementById('login-form');
     const signupForm = document.getElementById('signup-form');
+    if (mode === 'signup') { loginForm.classList.add('hidden'); signupForm.classList.remove('hidden'); }
 
-    if (mode === 'signup') {
-      loginForm.classList.add('hidden');
-      signupForm.classList.remove('hidden');
-    }
+    /* ========== METAL CLICK SOUND (with reverb) ========== */
+    (function initMetalClick(){
+      let ctx = null, reverbNode = null, reverbSend = null, dryBus = null;
 
-    /* ============ FLOATING 3D OBJECT ============ */
-    const floatObjectHost = document.getElementById('float-object-host');
-    let floatRenderer = null;
-    let floatScene = null;
-    let floatCamera = null;
-    let floatModelGroup = null;
-
-    function initFloatingObjectScene() {
-      if (floatRenderer || !THREE.OBJLoader) return;
-
-      floatRenderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
-      floatRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-      floatRenderer.setSize(floatObjectHost.clientWidth || 320, floatObjectHost.clientHeight || 320);
-      floatObjectHost.appendChild(floatRenderer.domElement);
-
-      floatScene = new THREE.Scene();
-      floatCamera = new THREE.PerspectiveCamera(35, 1, 0.1, 100);
-      floatCamera.position.set(0, 0, 6);
-
-      const ambient = new THREE.AmbientLight(0xffffff, 0.8);
-      floatScene.add(ambient);
-      const key = new THREE.DirectionalLight(0xffffff, 1.35);
-      key.position.set(4, 5, 6);
-      floatScene.add(key);
-      const fill = new THREE.DirectionalLight(0x8a8d91, 0.55);
-      fill.position.set(-5, -2, 3);
-      floatScene.add(fill);
-
-      const loader = new THREE.OBJLoader();
-      loader.load(
-        'object.obj',
-        (object) => {
-          object.traverse((child) => {
-            if (child.isMesh) {
-              child.material = child.material || new THREE.MeshStandardMaterial({ color: 0xe7e8ea });
-              child.material.side = THREE.DoubleSide;
-            }
-          });
-          object.scale.set(0.10, 0.15, 0.15);
-          object.rotation.x = Math.PI * 0.16;
-          floatModelGroup = new THREE.Group();
-          floatModelGroup.add(object);
-          floatScene.add(floatModelGroup);
-        },
-        undefined,
-        (error) => {
-          console.warn('Floating OBJ load failed.', error);
-        }
-      );
-
-      const render = () => {
-        if (floatRenderer && floatScene && floatCamera) {
-          if (floatModelGroup) {
-            floatModelGroup.rotation.y += 0.008;
-            floatModelGroup.position.y = Math.sin(Date.now() / 900) * 0.12;
+      // Build a synthetic impulse response for the ConvolverNode
+      function buildImpulse(ac, duration = 2.4, decay = 3.2){
+        const rate = ac.sampleRate;
+        const len = Math.floor(rate * duration);
+        const buf = ac.createBuffer(2, len, rate);
+        for (let c = 0; c < 2; c++){
+          const ch = buf.getChannelData(c);
+          for (let i = 0; i < len; i++){
+            const t = i / len;
+            const env = Math.pow(1 - t, decay);
+            ch[i] = (Math.random() * 2 - 1) * env;
           }
-          floatRenderer.render(floatScene, floatCamera);
         }
-        requestAnimationFrame(render);
+        return buf;
+      }
+
+      const ensureCtx = () => {
+        if (!ctx) {
+          const AC = window.AudioContext || window.webkitAudioContext;
+          if (!AC) return null;
+          ctx = new AC();
+
+          dryBus = ctx.createGain();      dryBus.gain.value = 0.75;
+          reverbSend = ctx.createGain();  reverbSend.gain.value = 0.55;
+
+          reverbNode = ctx.createConvolver();
+          reverbNode.buffer = buildImpulse(ctx, 2.4, 3.2);
+
+          const wetTone = ctx.createBiquadFilter();
+          wetTone.type = 'highshelf'; wetTone.frequency.value = 3500; wetTone.gain.value = 4;
+
+          const wetGain = ctx.createGain(); wetGain.gain.value = 0.85;
+
+          reverbSend.connect(reverbNode).connect(wetTone).connect(wetGain).connect(ctx.destination);
+          dryBus.connect(ctx.destination);
+        }
+        if (ctx.state === 'suspended') ctx.resume();
+        return ctx;
       };
-      render();
 
-      window.addEventListener('resize', () => {
-        if (!floatRenderer) return;
-        floatRenderer.setSize(floatObjectHost.clientWidth || 320, floatObjectHost.clientHeight || 320);
-        floatCamera.aspect = 1;
-        floatCamera.updateProjectionMatrix();
-      });
+      function playMetalClick(){
+        const ac = ensureCtx(); if (!ac) return;
+        const now = ac.currentTime;
+
+        const master = ac.createGain();
+        master.gain.value = 0.18;
+        const hp = ac.createBiquadFilter();
+        hp.type = 'highpass'; hp.frequency.value = 900;
+        master.connect(hp);
+        hp.connect(dryBus);
+        hp.connect(reverbSend);
+
+        // Inharmonic partials → metallic timbre
+        const base = 2100 + Math.random() * 260;
+        const ratios = [1.0, 1.51, 2.13, 2.84, 3.77];
+        ratios.forEach((r, i) => {
+          const osc = ac.createOscillator();
+          osc.type = 'square';
+          osc.frequency.value = base * r;
+          const g = ac.createGain();
+          const peak = 0.22 / (i + 1);
+          g.gain.setValueAtTime(0.0001, now);
+          g.gain.exponentialRampToValueAtTime(peak, now + 0.002);
+          g.gain.exponentialRampToValueAtTime(0.0001, now + 0.09 + i * 0.01);
+          osc.connect(g).connect(master);
+          osc.start(now);
+          osc.stop(now + 0.12);
+        });
+
+        // Noise transient for the "click" attack
+        const bufSize = Math.floor(ac.sampleRate * 0.03);
+        const noiseBuf = ac.createBuffer(1, bufSize, ac.sampleRate);
+        const data = noiseBuf.getChannelData(0);
+        for (let i = 0; i < bufSize; i++) data[i] = (Math.random()*2-1) * Math.pow(1 - i/bufSize, 2.5);
+        const noise = ac.createBufferSource(); noise.buffer = noiseBuf;
+        const nFilt = ac.createBiquadFilter();
+        nFilt.type = 'bandpass'; nFilt.frequency.value = 5200; nFilt.Q.value = 1.2;
+        const nGain = ac.createGain(); nGain.gain.value = 0.35;
+        noise.connect(nFilt).connect(nGain).connect(master);
+        noise.start(now);
+        noise.stop(now + 0.05);
+      }
+
+      // rate-limit so drags/rapid clicks don't stack ugly
+      let lastPlay = 0;
+      window.addEventListener('pointerdown', () => {
+        const t = performance.now();
+        if (t - lastPlay < 40) return;
+        lastPlay = t;
+        playMetalClick();
+      }, {passive:true, capture:true});
+    })();
+
+    /* ========== TEXT-PUSH ========== */
+    (function initTextPush(){
+      const letters = [];
+      const split = (node) => {
+        const walk = (el) => {
+          Array.from(el.childNodes).forEach(k => {
+            if (k.nodeType === Node.TEXT_NODE){
+              const frag = document.createDocumentFragment();
+              for (const ch of k.nodeValue){
+                const s = document.createElement('span');
+                s.className = 'letter';
+                if (ch === ' ' || ch === '\u00A0') s.innerHTML = '&nbsp;';
+                else s.textContent = ch;
+                frag.appendChild(s); letters.push(s);
+              }
+              el.replaceChild(frag, k);
+            } else if (k.nodeType === Node.ELEMENT_NODE) walk(k);
+          });
+        };
+        walk(node);
+      };
+      document.querySelectorAll('.push-text').forEach(split);
+      window.__resplitSuccess = () => {
+        const el = document.getElementById('success-msg');
+        for (let i = letters.length - 1; i >= 0; i--) if (!document.body.contains(letters[i])) letters.splice(i, 1);
+        const t = el.textContent; el.textContent = t; split(el);
+      };
+      const RADIUS = 110, STRENGTH = 40;
+      let mx = -9999, my = -9999;
+      window.addEventListener('pointermove', e => { mx = e.clientX; my = e.clientY; }, {passive:true});
+      window.addEventListener('pointerleave', () => { mx = -9999; my = -9999; });
+      function tick(){
+        for (const l of letters){
+          const r = l.getBoundingClientRect();
+          const cx = r.left + r.width/2, cy = r.top + r.height/2;
+          const dx = cx - mx, dy = cy - my, dist = Math.hypot(dx, dy);
+          if (dist < RADIUS){
+            const f = (1 - dist / RADIUS);
+            l.style.transform = `translate3d(${(dx/(dist||1)*f*STRENGTH).toFixed(2)}px, ${(dy/(dist||1)*f*STRENGTH).toFixed(2)}px, 0)`;
+          } else if (l.style.transform) l.style.transform = '';
+        }
+        requestAnimationFrame(tick);
+      }
+      requestAnimationFrame(tick);
+    })();
+
+    /* ========== LIQUID METABALL CURSOR ========== */
+    (function initFluid(){
+      const canvas = document.getElementById('fluid-canvas');
+      const gl = canvas.getContext('webgl', { premultipliedAlpha:false, antialias:false, alpha:true });
+      if (!gl){ canvas.style.display = 'none'; return; }
+      const MAX_POINTS = 24;
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      function resize(){ canvas.width = Math.floor(window.innerWidth*dpr); canvas.height = Math.floor(window.innerHeight*dpr); gl.viewport(0,0,canvas.width,canvas.height); }
+      window.addEventListener('resize', resize); resize();
+      const vsSrc = 'attribute vec2 a_pos; void main(){ gl_Position = vec4(a_pos, 0.0, 1.0); }';
+      const fsSrc = ['precision highp float;','uniform vec2 u_res;','uniform float u_dpr;','uniform vec4 u_points['+MAX_POINTS+'];','uniform vec2 u_vel['+MAX_POINTS+'];','uniform int u_count;',
+        'float field(vec2 p, vec2 c, float r, vec2 vel){','vec2 d=p-c; float sp=length(vel);',
+        'if(sp>0.5){ vec2 dir=vel/sp; float along=dot(d,dir); float stretch=1.0+clamp(sp*0.012,0.0,2.0); d-=dir*along*(1.0-1.0/stretch);}',
+        'return (r*r)/(dot(d,d)+1.0);}',
+        'void main(){ vec2 uv=gl_FragCoord.xy; uv.y=u_res.y-uv.y; vec2 px=uv/u_dpr; float f=0.0;',
+        'for(int i=0;i<'+MAX_POINTS+';i++){ if(i>=u_count) break; vec4 pt=u_points[i]; f+=field(px,pt.xy,pt.z,u_vel[i]);}',
+        'float body=smoothstep(0.85,1.15,f); float rim=smoothstep(1.15,1.8,f)-body;',
+        'vec3 col=vec3(1.0); float alpha=body+rim*0.35; if(alpha<0.002) discard;',
+        'gl_FragColor=vec4(col,alpha);}'].join('\n');
+      function compile(t,s){ const sh=gl.createShader(t); gl.shaderSource(sh,s); gl.compileShader(sh); return sh; }
+      const prog=gl.createProgram();
+      gl.attachShader(prog, compile(gl.VERTEX_SHADER, vsSrc));
+      gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, fsSrc));
+      gl.linkProgram(prog); gl.useProgram(prog);
+      const buf=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1,1,-1,-1,1,-1,1,1,-1,1,1]), gl.STATIC_DRAW);
+      const aPos=gl.getAttribLocation(prog,'a_pos'); gl.enableVertexAttribArray(aPos); gl.vertexAttribPointer(aPos,2,gl.FLOAT,false,0,0);
+      const uRes=gl.getUniformLocation(prog,'u_res'), uDpr=gl.getUniformLocation(prog,'u_dpr'),
+            uPts=gl.getUniformLocation(prog,'u_points'), uVel=gl.getUniformLocation(prog,'u_vel'),
+            uCount=gl.getUniformLocation(prog,'u_count');
+      gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+      let mx=window.innerWidth/2, my=window.innerHeight/2, px=mx, py=my, vx=0, vy=0;
+      const trail=[], MAX_TRAIL=16;
+      const pts=new Float32Array(MAX_POINTS*4), vels=new Float32Array(MAX_POINTS*2);
+      window.addEventListener('pointermove', e => { mx=e.clientX; my=e.clientY; });
+      let last=performance.now();
+      function frame(now){
+        const dt=Math.min(0.05,(now-last)/1000); last=now;
+        const k=1-Math.pow(0.002,dt); const nx=px+(mx-px)*k, ny=py+(my-py)*k;
+        vx=(nx-px)/Math.max(dt,0.001); vy=(ny-py)/Math.max(dt,0.001); px=nx; py=ny;
+        trail.push({x:px,y:py}); if(trail.length>MAX_TRAIL) trail.shift();
+        for(let i=0;i<trail.length-1;i++){ trail[i].vx=(trail[i+1].x-trail[i].x)*12; trail[i].vy=(trail[i+1].y-trail[i].y)*12;}
+        const lastT=trail[trail.length-1]; if(lastT){ lastT.vx=vx*0.008; lastT.vy=vy*0.008;}
+        const speed=Math.hypot(vx,vy), headR=46+Math.min(28,speed*0.015);
+        let count=0; pts[0]=px; pts[1]=py; pts[2]=headR; pts[3]=1; vels[0]=vx*0.008; vels[1]=vy*0.008; count=1;
+        for(let i=0;i<trail.length && count<MAX_POINTS;i++){ const t=trail[i], fade=1-i/trail.length;
+          pts[count*4]=t.x; pts[count*4+1]=t.y; pts[count*4+2]=26*fade+6; pts[count*4+3]=1;
+          vels[count*2]=t.vx||0; vels[count*2+1]=t.vy||0; count++; }
+        gl.clearColor(0,0,0,0); gl.clear(gl.COLOR_BUFFER_BIT);
+        gl.uniform2f(uRes, canvas.width, canvas.height); gl.uniform1f(uDpr, dpr);
+        gl.uniform4fv(uPts, pts); gl.uniform2fv(uVel, vels); gl.uniform1i(uCount, count);
+        gl.drawArrays(gl.TRIANGLES, 0, 6);
+        requestAnimationFrame(frame);
+      }
+      requestAnimationFrame(frame);
+    })();
+
+    /* ========== FORM SWITCHING (animated) ========== */
+    function swapForms(fromEl, toEl, urlMode){
+      if (fromEl.classList.contains('leaving')) return;
+      fromEl.classList.add('leaving');
+      setTimeout(() => {
+        fromEl.classList.add('hidden');
+        fromEl.classList.remove('leaving');
+        toEl.classList.remove('hidden');
+        toEl.classList.add('entering');
+        void toEl.offsetWidth;
+        toEl.classList.remove('entering');
+        history.replaceState(null, '', 'auth.html?mode=' + urlMode);
+      }, 380);
     }
-    initFloatingObjectScene();
 
-    /* ============ FORM SWITCHING ============ */
     document.getElementById('goto-signup').addEventListener('click', (e) => {
       e.preventDefault();
-      loginForm.classList.add('hidden');
-      signupForm.classList.remove('hidden');
       document.getElementById('login-error').classList.remove('show');
-      history.replaceState(null, '', 'auth.html?mode=signup');
+      swapForms(loginForm, signupForm, 'signup');
     });
-
     document.getElementById('goto-login').addEventListener('click', (e) => {
       e.preventDefault();
-      signupForm.classList.add('hidden');
-      loginForm.classList.remove('hidden');
       document.getElementById('signup-error').classList.remove('show');
-      history.replaceState(null, '', 'auth.html?mode=login');
+      swapForms(signupForm, loginForm, 'login');
     });
 
-    /* ============ LOGIN ============ */
+    /* ========== AUTH ACTIONS ========== */
     document.getElementById('login-btn').addEventListener('click', () => {
       const email = document.getElementById('login-email').value.trim();
       const password = document.getElementById('login-password').value;
-      const errorEl = document.getElementById('login-error');
-      const btn = document.getElementById('login-btn');
-
-      if (!email || !password) {
-        errorEl.textContent = 'Please enter your email and password.';
-        errorEl.classList.add('show');
-        return;
-      }
-
-      btn.disabled = true;
-      btn.textContent = 'Signing in...';
-
+      const errorEl = document.getElementById('login-error'), btn = document.getElementById('login-btn');
+      if (!email || !password){ errorEl.textContent='Please enter your email and password.'; errorEl.classList.add('show'); return; }
+      btn.disabled=true; btn.textContent='Signing in...';
       auth.signInWithEmailAndPassword(email, password)
-        .then((userCredential) => {
-          showSuccess('Welcome back, ' + (userCredential.user.displayName || 'traveler') + '.');
-        })
-        .catch((err) => {
-          errorEl.textContent = formatError(err);
-          errorEl.classList.add('show');
-          btn.disabled = false;
-          btn.textContent = 'Log In';
-        });
+        .then(uc => showSuccess('Welcome back, ' + (uc.user.displayName || 'traveler') + '.'))
+        .catch(err => { errorEl.textContent=formatError(err); errorEl.classList.add('show'); btn.disabled=false; btn.textContent='Log In'; });
     });
-
-    /* ============ SIGNUP ============ */
     document.getElementById('signup-btn').addEventListener('click', () => {
       const name = document.getElementById('signup-name').value.trim();
       const email = document.getElementById('signup-email').value.trim();
       const password = document.getElementById('signup-password').value;
-      const errorEl = document.getElementById('signup-error');
-      const btn = document.getElementById('signup-btn');
-
-      if (!name || !email || !password) {
-        errorEl.textContent = 'Please fill in all fields.';
-        errorEl.classList.add('show');
-        return;
-      }
-
-      if (password.length < 6) {
-        errorEl.textContent = 'Password must be at least 6 characters.';
-        errorEl.classList.add('show');
-        return;
-      }
-
-      btn.disabled = true;
-      btn.textContent = 'Creating...';
-
+      const errorEl = document.getElementById('signup-error'), btn = document.getElementById('signup-btn');
+      if (!name || !email || !password){ errorEl.textContent='Please fill in all fields.'; errorEl.classList.add('show'); return; }
+      if (password.length < 6){ errorEl.textContent='Password must be at least 6 characters.'; errorEl.classList.add('show'); return; }
+      btn.disabled=true; btn.textContent='Creating...';
       auth.createUserWithEmailAndPassword(email, password)
-        .then((userCredential) => {
-          return userCredential.user.updateProfile({ displayName: name })
-            .then(() => showSuccess('Welcome aboard, ' + name + '.'));
-        })
-        .catch((err) => {
-          errorEl.textContent = formatError(err);
-          errorEl.classList.add('show');
-          btn.disabled = false;
-          btn.textContent = 'Create Account';
-        });
+        .then(uc => uc.user.updateProfile({displayName:name}).then(() => showSuccess('Welcome aboard, '+name+'.')))
+        .catch(err => { errorEl.textContent=formatError(err); errorEl.classList.add('show'); btn.disabled=false; btn.textContent='Create Account'; });
     });
 
-    function showSuccess(msg) {
-      document.getElementById('success-msg').textContent = msg;
-      loginForm.classList.add('hidden');
-      signupForm.classList.add('hidden');
+    function showSuccess(msg){
+      const el = document.getElementById('success-msg'); el.textContent = msg;
+      if (window.__resplitSuccess) window.__resplitSuccess();
+      loginForm.classList.add('hidden'); signupForm.classList.add('hidden');
       document.getElementById('auth-success').classList.add('show');
-      // Auto-continue into the dashboard shortly after the success state appears.
       clearTimeout(window.__dashRedirect);
-      window.__dashRedirect = setTimeout(() => {
-        window.location.href = 'dashboard.html';
-      }, 1400);
+      window.__dashRedirect = setTimeout(() => { window.location.href = 'dashboard.html'; }, 1400);
     }
-
-    function formatError(err) {
+    function formatError(err){
       const map = {
-        'auth/invalid-email': 'That email address looks invalid.',
-        'auth/user-not-found': 'No account found with that email.',
-        'auth/wrong-password': 'Incorrect password. Please try again.',
-        'auth/email-already-in-use': 'An account already exists with that email.',
-        'auth/weak-password': 'Password should be at least 6 characters.',
-        'auth/missing-email': 'Please enter an email address.',
-        'auth/invalid-credential': 'Invalid email or password.',
-        'auth/network-request-failed': 'Network error. Check your connection.'
+        'auth/invalid-email':'That email address looks invalid.',
+        'auth/user-not-found':'No account found with that email.',
+        'auth/wrong-password':'Incorrect password. Please try again.',
+        'auth/email-already-in-use':'An account already exists with that email.',
+        'auth/weak-password':'Password should be at least 6 characters.',
+        'auth/missing-email':'Please enter an email address.',
+        'auth/invalid-credential':'Invalid email or password.',
+        'auth/network-request-failed':'Network error. Check your connection.'
       };
       return map[err.code] || err.message || 'Something went wrong. Please try again.';
     }
+    auth.onAuthStateChanged(user => { if (user) showSuccess('Welcome back, ' + (user.displayName || 'traveler') + '.'); });
 
-    /* ============ AUTH STATE ============ */
-    auth.onAuthStateChanged((user) => {
-      if (user) {
-        showSuccess('Welcome back, ' + (user.displayName || 'traveler') + '.');
-      }
-    });
-
-    /* ============ 3D WATERMARK RING ============ */
-    let wmRenderer, wmScene, wmCamera, wmRing;
-
-    function initWatermark() {
+    /* ========== WATERMARK RING ========== */
+    (function initWatermark(){
       const canvas = document.getElementById('watermark-canvas');
-      wmRenderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+      const wmRenderer = new THREE.WebGLRenderer({ canvas, antialias:true, alpha:true });
       wmRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
       wmRenderer.setSize(600, 600);
-
-      wmScene = new THREE.Scene();
-      wmCamera = new THREE.PerspectiveCamera(38, 1, 0.1, 100);
-      wmCamera.position.set(0, 0, 8);
-
-      const key = new THREE.DirectionalLight(0xffffff, 1.4);
-      key.position.set(4, 5, 6);
-      wmScene.add(key);
-      const fill = new THREE.DirectionalLight(0x8a8d91, 0.5);
-      fill.position.set(-5, -2, 3);
-      wmScene.add(fill);
+      const wmScene = new THREE.Scene();
+      const wmCamera = new THREE.PerspectiveCamera(38, 1, 0.1, 100); wmCamera.position.set(0,0,8);
+      const key = new THREE.DirectionalLight(0xffffff, 1.4); key.position.set(4,5,6); wmScene.add(key);
+      const fill = new THREE.DirectionalLight(0x8a8d91, 0.5); fill.position.set(-5,-2,3); wmScene.add(fill);
       wmScene.add(new THREE.AmbientLight(0x404040, 0.6));
+      const wmRing = new THREE.Group(); wmRing.scale.set(0.3,0.3,0.3);
+      const band = new THREE.Mesh(new THREE.TorusGeometry(1.5, 0.55, 48, 128), new THREE.MeshPhysicalMaterial({color:0x1a1a1c, metalness:0.85, roughness:0.28, clearcoat:0.6, clearcoatRoughness:0.25, reflectivity:0.5}));
+      band.rotation.x = Math.PI/2; wmRing.add(band);
+      const crest = new THREE.Mesh(new THREE.IcosahedronGeometry(0.85, 0), new THREE.MeshPhysicalMaterial({color:0x232326, metalness:0.9, roughness:0.2, clearcoat:0.8}));
+      crest.position.z=0.55; crest.scale.set(1,1,0.5); wmRing.add(crest);
+      const wire = new THREE.LineSegments(new THREE.EdgesGeometry(crest.geometry), new THREE.LineBasicMaterial({color:0x8a8d91, transparent:true, opacity:0.6}));
+      wire.scale.copy(crest.scale); wire.position.copy(crest.position); wmRing.add(wire);
+      wmRing.rotation.x = 0.3; wmScene.add(wmRing);
+      (function animate(){ requestAnimationFrame(animate); wmRing.rotation.y += 0.003; wmRenderer.render(wmScene, wmCamera); })();
+    })();
 
-      wmRing = new THREE.Group();
-      wmRing.scale.set(0.3, 0.3, 0.3);
-
-      const bandGeo = new THREE.TorusGeometry(1.5, 0.55, 48, 128);
-      const bandMat = new THREE.MeshPhysicalMaterial({
-        color: 0x1a1a1c, metalness: 0.85, roughness: 0.28,
-        clearcoat: 0.6, clearcoatRoughness: 0.25, reflectivity: 0.5
-      });
-      const band = new THREE.Mesh(bandGeo, bandMat);
-      band.rotation.x = Math.PI / 2;
-      wmRing.add(band);
-
-      const facetMat = new THREE.MeshPhysicalMaterial({
-        color: 0x232326, metalness: 0.9, roughness: 0.2, clearcoat: 0.8
-      });
-      const crest = new THREE.Mesh(new THREE.IcosahedronGeometry(0.85, 0), facetMat);
-      crest.position.z = 0.55;
-      crest.scale.set(1, 1, 0.5);
-      wmRing.add(crest);
-
-      const lineMat = new THREE.LineBasicMaterial({ color: 0x8a8d91, transparent: true, opacity: 0.6 });
-      const edges = new THREE.EdgesGeometry(crest.geometry);
-      const wire = new THREE.LineSegments(edges, lineMat);
-      wire.scale.copy(crest.scale);
-      wire.position.copy(crest.position);
-      wmRing.add(wire);
-
-      wmRing.rotation.x = 0.3;
-      wmScene.add(wmRing);
-
-      function animate() {
-        requestAnimationFrame(animate);
-        wmRing.rotation.y += 0.003;
-        wmRenderer.render(wmScene, wmCamera);
-      }
-      animate();
-
-      window.addEventListener('resize', () => {
-        wmCamera.aspect = 1;
-        wmCamera.updateProjectionMatrix();
-      });
-    }
-    initWatermark();
-
-    /* Enter key submits forms */
-    document.getElementById('login-password').addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') document.getElementById('login-btn').click();
-    });
-    document.getElementById('signup-password').addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') document.getElementById('signup-btn').click();
-    });
+    document.getElementById('login-password').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('login-btn').click(); });
+    document.getElementById('signup-password').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('signup-btn').click(); });
   </script>
 </body>
 </html>

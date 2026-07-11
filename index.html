@@ -3,25 +3,21 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Metro Nexus — The Future of Transportation</title>
+<title>Metro Nexus</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..900;1,6..96,400..900&family=Fleur+De+Leah&family=PT+Serif:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
-<script type="module" src="https://cdn.jsdelivr.net/npm/@google/model-viewer/dist/model-viewer.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
 <link rel="shortcut icon" href="/logo_wo_bg.png" type="image/x-icon">
 <style>
   :root{
     --ink:#0a0a0b;
     --ink-2:#141416;
-    --charcoal:#1c1d1f;
     --steel:#8a8d91;
     --mist:#c4c6c9;
     --paper:#f5f5f4;
     --hair:rgba(255,255,255,0.08);
     --hair-strong:rgba(255,255,255,0.16);
-    --display: 'PT Serif', serif;
-    --body: 'Bodoni Moda', serif;
-    --hand: 'Fleur De Leah', cursive;
+    --font: 'Cormorant Garamond', serif;
     --ease: cubic-bezier(.16,.8,.24,1);
   }
   *{margin:0;padding:0;box-sizing:border-box;}
@@ -29,345 +25,139 @@
   body{
     background:var(--ink);
     color:var(--paper);
-    font-family:var(--body);
+    font-family:var(--font);
     overflow-x:hidden;
     -webkit-font-smoothing:antialiased;
+    cursor:none;
+    position:relative;
   }
+  /* Living white gradient behind everything */
+  #ambient-glow{
+    position:fixed;
+    inset:-20vmax;
+    z-index:0;
+    pointer-events:none;
+    background:
+      radial-gradient(40vmax 40vmax at 18% 22%, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.06) 35%, rgba(255,255,255,0) 65%),
+      radial-gradient(50vmax 50vmax at 82% 78%, rgba(255,255,255,0.14) 0%, rgba(255,255,255,0.04) 40%, rgba(255,255,255,0) 70%),
+      radial-gradient(35vmax 35vmax at 60% 10%, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0) 60%);
+    filter:blur(30px);
+    animation:glowDrift 22s ease-in-out infinite alternate;
+    mix-blend-mode:screen;
+    opacity:0.9;
+  }
+  @keyframes glowDrift{
+    0%   { transform:translate3d(-3vmax,-2vmax,0) scale(1);   }
+    50%  { transform:translate3d(4vmax, 3vmax, 0) scale(1.08); }
+    100% { transform:translate3d(-2vmax,4vmax, 0) scale(0.96); }
+  }
+  a, button, .glass-btn{cursor:none;}
   ::selection{background:var(--paper);color:var(--ink);}
 
   @media (prefers-reduced-motion: reduce){
     *{animation-duration:0.01ms !important; animation-iteration-count:1 !important; transition-duration:0.01ms !important; scroll-behavior:auto !important;}
+    body{cursor:auto;}
   }
 
   a:focus-visible, button:focus-visible{outline:2px solid var(--paper); outline-offset:4px;}
 
-  /* ============ SPLASH / LOADER ============ */
-  #splash{
-    position:fixed; inset:0; z-index:9999;
-    background:var(--ink);
-    display:flex; align-items:center; justify-content:center;
-    flex-direction:column;
-    gap:28px;
-  }
-  #loader-visual{
-    width:180px; height:180px;
-    position:relative;
-  }
-  #loader-visual svg{width:100%;height:100%;display:block;}
-  #loader-visual video{
-    width:100%;height:100%;display:block;object-fit:cover;
-    border-radius:50%;filter:brightness(0.9) contrast(1.1);
-  }
-  .loader-ring{
-    fill:none;
-    stroke:var(--mist);
-    stroke-width:1;
-    opacity:0.5;
-    transform-origin:center;
-  }
-  .loader-facet{
-    fill:none;
-    stroke:var(--paper);
-    stroke-width:1.1;
-    stroke-linecap:round;
-  }
-  .splash-word{
-    font-family:var(--display);
-    font-weight:300;
-    letter-spacing:0.5em;
-    text-transform:uppercase;
-    font-size:12px;
-    color:var(--steel);
-    text-indent:0.5em;
-  }
-  .splash-bar{
-    width:180px; height:1px; background:var(--hair);
-    position:relative; overflow:hidden;
-  }
-  .splash-bar span{
-    position:absolute; left:0; top:0; bottom:0;
-    width:0%; background:var(--paper);
-  }
+  /* SPLASH */
+  #splash{position:fixed; inset:0; z-index:9999; background:var(--ink); display:flex; align-items:center; justify-content:center; flex-direction:column; gap:28px;}
+  #loader-visual{width:160px; height:160px; position:relative; display:flex; align-items:center; justify-content:center;}
+  #loader-visual video{width:100%;height:100%;display:block;object-fit:cover;border-radius:50%;filter:brightness(0.9) contrast(1.1);}
+  .splash-word{font-family:var(--font); font-weight:400; letter-spacing:0.4em; text-transform:uppercase; font-size:15px; color:var(--steel); text-indent:0.4em;}
+  .splash-bar{width:160px; height:1px; background:var(--hair); position:relative; overflow:hidden;}
+  .splash-bar span{position:absolute; left:0; top:0; bottom:0; width:0%; background:var(--paper);}
 
-  /* ============ NAV ============ */
-  nav{
-    position:fixed; top:0; left:0; right:0; z-index:500;
-    display:flex; align-items:center; justify-content:space-between;
-    padding:28px 5vw;
-    mix-blend-mode:difference;
-    opacity:0;
-  }
-  .nav-mark{
-    font-family:var(--display); font-weight:600; letter-spacing:0.06em;
-    font-size:15px; color:var(--paper);
-  }
+  /* NAV */
+  nav{position:fixed; top:0; left:0; right:0; z-index:500; display:flex; align-items:center; justify-content:space-between; padding:28px 5vw; mix-blend-mode:difference; opacity:0;}
+  .nav-mark{font-family:var(--font); font-weight:600; letter-spacing:0.05em; font-size:19px; color:var(--paper);}
   .nav-links{display:flex; gap:36px; list-style:none;}
-  .nav-links a{
-    color:var(--paper); text-decoration:none;
-    font-size:12px; letter-spacing:0.12em; text-transform:uppercase;
-    font-weight:400; opacity:0.75; transition:opacity .3s var(--ease);
-  }
+  .nav-links a{color:var(--paper); text-decoration:none; font-size:15px; letter-spacing:0.06em; font-weight:400; opacity:0.75; transition:opacity .3s var(--ease);}
   .nav-links a:hover{opacity:1;}
 
-  /* ============ HERO ============ */
-  #hero{
-    position:relative; height:100vh; width:100%;
-    display:flex; align-items:center; justify-content:center;
-    overflow:hidden;
+  /* HERO */
+  #hero{position:relative; height:100vh; width:100%; display:flex; align-items:center; justify-content:center; overflow:hidden;}
+  #hero-bg{position:absolute; inset:0; overflow:hidden; will-change:transform; transform:scale(1.02);}
+  #hero-bg::before{content:''; position:absolute; inset:0; background-image:url('heroback.png'); background-size:cover; background-position:center center; background-repeat:no-repeat; filter:blur(4px); transform:scale(1.04); pointer-events:none;}
+  #hero-scrim{position:absolute; inset:0; background:linear-gradient(180deg, rgba(10,10,11,0.55) 0%, rgba(10,10,11,0.35) 40%, rgba(10,10,11,0.75) 100%);}
+  #hero-content{position:relative; z-index:5; text-align:center; display:flex; flex-direction:column; align-items:center; gap:18px; padding:0 24px;}
+  #hero-title{font-family:var(--font); font-weight:500; font-size:clamp(52px, 10vw, 132px); letter-spacing:-0.01em; line-height:0.95; color:var(--paper); text-shadow:0 2px 40px rgba(0,0,0,0.4);}
+  #hero-subtitle{
+    font-family:var(--font); font-weight:300; font-style:italic;
+    font-size:clamp(15px, 1.6vw, 22px);
+    letter-spacing:0.18em; text-transform:lowercase;
+    color:var(--mist); opacity:0.85;
+    max-width:640px; line-height:1.5;
+    text-shadow:0 1px 24px rgba(0,0,0,0.5);
   }
-  #hero-bg{
-    position:absolute; inset:0;
-    overflow:hidden;
-    will-change:transform;
-    transform:scale(1.02);
-  }
-  #hero-bg::before{
-    content:'';
-    position:absolute; inset:0;
-    background-image:url('heroback.png');
-    background-size:cover;
-    background-position:center center;
-    background-repeat:no-repeat;
-    filter:blur(4px);
-    transform:scale(1.04);
-    pointer-events:none;
-  }
-  #hero-scrim{
-    position:absolute; inset:0;
-    background:
-      linear-gradient(180deg, rgba(10,10,11,0.55) 0%, rgba(10,10,11,0.35) 40%, rgba(10,10,11,0.75) 100%);
-    backdrop-filter:blur(0px);
-  }
-  #hero-content{
-    position:relative; z-index:5; text-align:center;
-    display:flex; flex-direction:column; align-items:center; gap:18px;
-    padding:0 24px;
-  }
-  .eyebrow-hand{
-    font-family:var(--hand); font-size:26px; color:var(--mist);
-    letter-spacing:0.02em; opacity:0.9;
-  }
-  #hero-title{
-    font-family:var(--display); font-weight:600;
-    font-size:clamp(48px, 9vw, 128px);
-    letter-spacing:-0.02em; line-height:0.95;
-    color:var(--paper);
-    text-shadow:0 2px 40px rgba(0,0,0,0.4);
-  }
-  #hero-sub{
-    font-family:var(--body); font-weight:300;
-    font-size:clamp(14px, 1.6vw, 19px);
-    letter-spacing:0.28em; text-transform:uppercase;
-    color:var(--mist); margin-top:6px;
-  }
-  .scroll-cue{
-    position:absolute; bottom:44px; left:50%; transform:translateX(-50%);
-    display:flex; flex-direction:column; align-items:center; gap:10px;
-    z-index:5; opacity:0.7;
-  }
-  .scroll-cue span{
-    font-size:10px; letter-spacing:0.2em; text-transform:uppercase; color:var(--mist);
-  }
+  .scroll-cue{position:absolute; bottom:44px; left:50%; transform:translateX(-50%); display:flex; flex-direction:column; align-items:center; gap:10px; z-index:5; opacity:0.6;}
   .scroll-line{width:1px; height:36px; background:linear-gradient(var(--paper), transparent); overflow:hidden;}
 
-  /* ============ SECTION SHARED ============ */
-  section{position:relative;}
-  .section-head{
-    text-align:center; max-width:640px; margin:0 auto 0;
-    padding:0 24px;
-  }
-  .section-eyebrow{
-    font-family:var(--hand); font-size:24px; color:var(--steel); display:block; margin-bottom:6px;
-  }
-  .section-title{
-    font-family:var(--display); font-weight:500; font-size:clamp(30px,4.4vw,52px);
-    letter-spacing:-0.01em; color:var(--paper);
-  }
-  .section-desc{
-    font-family:var(--body); font-weight:300; color:var(--steel);
-    font-size:15px; line-height:1.7; margin-top:18px;
-  }
+  section{position:relative; z-index:1;}
+  .section-head{text-align:center; max-width:640px; margin:0 auto 0; padding:0 24px;}
+  .section-title{font-family:var(--font); font-weight:500; font-size:clamp(32px,4.6vw,56px); letter-spacing:-0.01em; color:var(--paper);}
 
-  /* ============ RING / OBJECT SECTION ============ */
-  #object-section{
-    height:340vh;
-    background:linear-gradient(180deg, var(--ink) 0%, var(--ink-2) 50%, var(--ink) 100%);
-  }
-  #object-pin{
-    position:sticky; top:0; height:100vh; width:100%;
-    display:flex; flex-direction:column; align-items:center; justify-content:flex-end;
-    padding-bottom:100px;
-    overflow:hidden;
-  }
-  #object-canvas{
-    position:absolute; inset:0; width:100%; height:100%;
-  }
-  #object-caption{
-    position:relative; z-index:4; text-align:center; pointer-events:none;
-  }
-  #object-caption .section-eyebrow{margin-bottom:2px;}
-  #object-caption .section-title{font-size:clamp(24px,3.4vw,38px);}
-  .object-index{
-    position:absolute; z-index:4; bottom:56px; left:0; right:0;
-    display:flex; justify-content:center; gap:10px; pointer-events:none;
-  }
-  .object-index span{
-    width:5px; height:5px; border-radius:50%; background:var(--hair-strong);
-    transition:background .3s var(--ease), transform .3s var(--ease);
-  }
-  .object-index span.active{background:var(--paper); transform:scale(1.4);}
-
-  /* ============ COMPARTMENTS (HORIZONTAL SCROLL) — MINIMAL ============ */
-  #compartments-section{
-    height:auto;
-    background:var(--ink);
-  }
-  #compartments-pin{
-    position:sticky; top:0; height:100vh; width:100%;
-    overflow:hidden; display:flex; flex-direction:column;
-    justify-content:center;
-  }
-  #compartments-track{
-    display:flex; align-items:center; gap:6vw;
+  /* Text-push letter effect */
+  .push-text{display:inline-block; white-space:pre-wrap;}
+  .push-text .letter{
+    display:inline-block;
     will-change:transform;
-    padding-left:10vw;
+    transition:transform 480ms cubic-bezier(.22,.9,.28,1);
   }
-  .compartment{
-    flex:0 0 auto;
-    width:min(72vw, 560px);
-    height:52vh;
-    background:transparent;
-    border:1px solid var(--hair);
-    border-radius:4px;
-    position:relative;
-    overflow:hidden;
-    display:flex; flex-direction:column; justify-content:space-between;
-    padding:36px 40px;
-  }
-  .compartment::before,
-  .compartment::after{content:none;}
-  .compartment-top{display:flex; justify-content:space-between; align-items:flex-start; position:relative; z-index:2;}
-  .compartment-line{
-    font-family:var(--display); font-size:11px; letter-spacing:0.18em; color:var(--steel);
-    text-transform:uppercase;
-  }
-  .compartment-num{
-    font-family:var(--display); font-size:11px; color:var(--steel); opacity:0.5;
-    letter-spacing:0.1em;
-  }
-  .compartment-body{
-    position:relative; z-index:2; margin:auto 0;
-  }
-  .compartment-title{
-    font-family:var(--display); font-weight:400; font-size:clamp(28px,4vw,42px); color:var(--paper);
-    letter-spacing:-0.02em; line-height:1.1; margin-bottom:16px;
-  }
-  .compartment-desc{
-    font-family:var(--body); font-weight:300; font-size:15px; color:var(--steel);
-    line-height:1.7; max-width:420px;
-  }
-  .compartment-tag{
-    font-family:var(--hand); font-size:22px; color:var(--mist); opacity:0.6;
-    display:block; margin-top:20px;
-  }
-  .compartment-bottom{
-    position:relative; z-index:2; display:flex; justify-content:space-between; align-items:flex-end;
-  }
-  .compartment-num-large{
-    font-family:var(--display); font-weight:300; font-size:clamp(48px,8vw,80px);
-    color:var(--hair-strong); line-height:1; opacity:0.5;
-  }
-  #metro-line-map{
-    position:relative; z-index:3;
-    width:min(72vw, 640px); margin:0 auto 48px;
-  }
-  .metro-rail{
-    position:relative; height:1px; background:var(--hair); border-radius:0;
-  }
-  .metro-rail span{
-    display:block; height:100%; width:0%; background:var(--paper);
-    border-radius:0; transition:width .1s linear;
-  }
-  .metro-stations{
-    position:relative; display:flex; justify-content:space-between; margin-top:-5px;
-  }
-  .metro-station{
-    display:flex; flex-direction:column; align-items:center; gap:10px;
-  }
-  .metro-dot{
-    width:7px; height:7px; border-radius:50%;
-    background:var(--ink); border:1px solid var(--hair-strong);
-    transition:background .3s var(--ease), border-color .3s var(--ease), transform .3s var(--ease);
-  }
-  .metro-label{
-    font-family:var(--display); font-size:10px; letter-spacing:0.14em; text-transform:uppercase;
-    color:var(--steel); opacity:0.6; white-space:nowrap;
-    transition:color .3s var(--ease), opacity .3s var(--ease);
-  }
-  .metro-station.active .metro-dot{
-    background:var(--paper); border-color:var(--paper); transform:scale(1.2);
-  }
-  .metro-station.active .metro-label{color:var(--paper); opacity:1;}
 
-  /* ============ CLOSING / FOOTER ============ */
-  #closing{
-    min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center;
-    text-align:center; padding:120px 24px; gap:28px;
-    background:radial-gradient(ellipse at center, var(--ink-2) 0%, var(--ink) 70%);
-  }
-  .closing-title{
-    font-family:var(--display); font-weight:500;
-    font-size:clamp(34px,6vw,72px); letter-spacing:-0.01em;
-    max-width:900px; line-height:1.05;
-  }
-  .glass-btn{
-    margin-top:12px;
-    padding:16px 40px;
-    border-radius:100px;
-    background:rgba(255,255,255,0.06);
-    border:1px solid var(--hair-strong);
-    backdrop-filter:blur(12px);
-    color:var(--paper);
-    font-family:var(--body); font-size:13px; letter-spacing:0.14em; text-transform:uppercase;
-    cursor:pointer;
-    transition:background .35s var(--ease), transform .35s var(--ease);
-  }
+  /* RING */
+  #object-section{height:160vh; background:linear-gradient(180deg, var(--ink) 0%, var(--ink-2) 50%, var(--ink) 100%);}
+  #object-pin{position:sticky; top:0; height:100vh; width:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; overflow:hidden;}
+  #object-canvas{position:absolute; inset:0; width:100%; height:90%; z-index:3;}
+  #object-caption{position:relative; z-index:4; text-align:center; pointer-events:none; margin-top:15vh;}
+  #object-caption .section-title{font-size:clamp(100px,3.6vw,200px);}
+
+  /* LIQUID CURSOR — inversion via difference blend so covered text shows contrast color */
+  #fluid-canvas{position:fixed; inset:0; width:100vw; height:100vh; z-index:9000; pointer-events:none; mix-blend-mode:difference;}
+
+  /* SOUND TOGGLE */
+  #sound-toggle{position:fixed; bottom:28px; right:28px; z-index:600; width:44px; height:44px; border-radius:50%; background:rgba(255,255,255,0.06); border:1px solid var(--hair-strong); backdrop-filter:blur(12px); color:var(--paper); display:flex; align-items:center; justify-content:center; cursor:none; font-family:var(--font); font-size:16px; opacity:0; transition:background .3s var(--ease), opacity .6s var(--ease);}
+  #sound-toggle:hover{background:rgba(255,255,255,0.14);}
+
+  /* COMPARTMENTS */
+  #compartments-section{height:auto; background:var(--ink);}
+  #compartments-pin{position:sticky; top:0; height:100vh; width:100%; overflow:hidden; display:flex; flex-direction:column; justify-content:center;}
+  #compartments-track{display:flex; align-items:center; gap:6vw; will-change:transform; padding-left:10vw;}
+  .compartment{flex:0 0 auto; width:min(72vw, 560px); height:46vh; background:transparent; border:1px solid rgba(173,173,173,0.35); border-radius:4px; position:relative; overflow:hidden; display:flex; flex-direction:column; justify-content:flex-end; padding:40px; opacity:1;}
+  .compartment-index{position:absolute; top:-0.28em; right:0.02em; font-family:var(--font); font-weight:500; font-size:clamp(180px, 30vh, 320px); line-height:1; letter-spacing:-0.04em; color:transparent; -webkit-text-stroke:1px rgba(245,245,244,0.14); text-stroke:1px rgba(245,245,244,0.14); pointer-events:none; user-select:none;}
+  .compartment-title{font-family:var(--font); font-weight:500; font-size:clamp(30px,4.2vw,44px); color:var(--paper); letter-spacing:-0.01em; line-height:1.1; margin-bottom:14px; position:relative; z-index:2;}
+  .compartment-desc{font-family:var(--font); font-weight:400; font-size:18px; color:var(--steel); line-height:1.55; max-width:380px; position:relative; z-index:2;}
+
+  /* ACCOUNT / FOOTER */
+  #account{display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:100px 24px; gap:20px; background:var(--ink);}
+  #account .section-title{font-size:clamp(28px,4vw,44px);}
+  .account-actions{display:flex; gap:16px; flex-wrap:wrap; justify-content:center; margin-top:8px;}
+  .glass-btn{padding:16px 40px; border-radius:100px; background:rgba(255,255,255,0.06); border:1px solid var(--hair-strong); backdrop-filter:blur(12px); color:var(--paper); font-family:var(--font); font-size:16px; letter-spacing:0.04em; cursor:none; transition:background .35s var(--ease), transform .35s var(--ease);}
   .glass-btn:hover{background:rgba(255,255,255,0.12); transform:translateY(-2px);}
   .glass-btn--solid{background:var(--paper); border-color:var(--paper); color:var(--ink);}
   .glass-btn--solid:hover{background:var(--mist); border-color:var(--mist);}
 
-  #account{
-    display:flex; flex-direction:column; align-items:center; justify-content:center;
-    text-align:center; padding:100px 24px; gap:16px;
-    background:var(--ink); border-top:none;
-  }
-  #account .section-title{font-size:clamp(26px,4vw,42px);}
-  .account-sub{
-    font-family:var(--body); font-size:15px; color:var(--steel);
-    max-width:460px; line-height:1.5; margin-bottom:8px;
-  }
-  .account-actions{display:flex; gap:16px; flex-wrap:wrap; justify-content:center;}
-
-  footer{
-    padding:36px 5vw 44px;
-    display:flex; justify-content:space-between; align-items:center;
-    border-top:1px solid var(--hair);
-    font-size:12px; color:var(--steel); letter-spacing:0.06em;
-  }
+  footer{padding:36px 5vw 44px; display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--hair); font-size:15px; color:var(--steel); letter-spacing:0.02em; position:relative; z-index:1;}
 
   @media (max-width:720px){
     nav{padding:22px 20px;}
     .nav-links{display:none;}
-    #object-section{height:280vh;}
+    #object-section{height:140vh;}
     #compartments-section{height:auto;}
-    .compartment{width:84vw; height:50vh; padding:24px;}
-    .compartment-window{height:88px;}
+    .compartment{width:84vw; height:44vh; padding:28px;}
+    .compartment-index{font-size:clamp(140px, 26vh, 220px);}
+    #object-caption{margin-top:28vh;}
+    body{cursor:auto;}
+    #fluid-canvas{display:none;}
+    #ambient-glow{opacity:0.55;}
   }
 </style>
 </head>
 <body>
 
-  <!-- ============ SPLASH ============ -->
+  <div id="ambient-glow" aria-hidden="true"></div>
+
   <div id="splash" aria-hidden="true">
     <div id="loader-visual">
       <video autoplay muted playsinline loop>
@@ -378,132 +168,74 @@
     <div class="splash-bar"><span id="splash-fill"></span></div>
   </div>
 
-  <!-- ============ NAV ============ -->
   <nav>
     <div class="nav-mark">METRO&nbsp;NEXUS</div>
     <ul class="nav-links">
-      <li><a href="#object-section">The&nbsp;Ring</a></li>
-      <li><a href="#compartments-section">The&nbsp;Line</a></li>
+      <li><a href="#object-section">Ring</a></li>
+      <li><a href="#compartments-section">Line</a></li>
       <li><a href="auth.html?mode=login">Log&nbsp;In</a></li>
     </ul>
   </nav>
 
-  <!-- ============ HERO ============ -->
+  <audio id="bg-audio" src="ambient.mp3" loop preload="auto"></audio>
+  <button id="sound-toggle" aria-label="Toggle sound" title="Sound">♪</button>
+
+  <canvas id="fluid-canvas"></canvas>
+
   <section id="hero">
     <div id="hero-bg"></div>
     <div id="hero-scrim"></div>
     <div id="hero-content">
-      <span class="eyebrow-hand">precision, underground</span>
-      <h1 id="hero-title">Metro&nbsp;Nexus</h1>
-      <p id="hero-sub">The Future of Transportation</p>
+      <h1 id="hero-title" class="push-text">Metro&nbsp;Nexus</h1>
+      <p id="hero-subtitle" class="push-text">Lorem ipsum dolor sit amet</p>
     </div>
-    <div class="scroll-cue">
-      <span>Scroll</span>
-      <div class="scroll-line"></div>
-    </div>
+    <div class="scroll-cue"><div class="scroll-line"></div></div>
   </section>
 
-  <!-- ============ OBJECT / RING ============ -->
   <section id="object-section">
-    <div id="object-pin">
-      <canvas id="object-canvas"></canvas>
-      <div id="object-caption">
-        <span class="section-eyebrow">the signature</span>
-        <h2 class="section-title">The&nbsp;Nexus&nbsp;Ring</h2>
-      </div>
-      <div class="object-index">
-        <span class="active"></span><span></span><span></span>
-      </div>
+    <div id="object-caption">
+      <h2 class="section-title push-text">The&nbsp;<span style="color:#cde1ff;">Nexus</span>&nbsp;Ring</h2>
     </div>
+    <div id="object-pin"><canvas id="object-canvas"></canvas></div>
   </section>
 
-  <!-- ============ COMPARTMENTS ============ -->
   <section id="compartments-section">
     <div id="compartments-pin">
       <div class="section-head">
-        <span class="section-eyebrow">the line</span>
-        <h2 class="section-title">Every&nbsp;Car,&nbsp;Considered</h2>
-      </div>
-      <div id="metro-line-map">
-        <div class="metro-rail"><span id="metro-rail-fill"></span></div>
-        <div class="metro-stations">
-          <div class="metro-station active"><span class="metro-dot"></span><span class="metro-label">Start&nbsp;Hub</span></div>
-          <div class="metro-station"><span class="metro-dot"></span><span class="metro-label">Foundry</span></div>
-          <div class="metro-station"><span class="metro-dot"></span><span class="metro-label">Meridian</span></div>
-          <div class="metro-station"><span class="metro-dot"></span><span class="metro-label">Terminus</span></div>
-        </div>
+        <h2 class="section-title push-text" style="margin-bottom:10vh;">Every&nbsp;Car,&nbsp;Considered</h2>
       </div>
       <div id="compartments-track">
-
         <div class="compartment">
-          <div class="compartment-top">
-            <span class="compartment-line">Line 01 — Start Hub</span>
-            <span class="compartment-num">01 / 04</span>
-          </div>
-          <div class="compartment-body">
-            <h3 class="compartment-title">Start Hub</h3>
-            <p class="compartment-desc">The origin point. Every journey begins here — a clean platform, a clear schedule, a quiet departure into the network below.</p>
-            <span class="compartment-tag">where it begins</span>
-          </div>
-          <div class="compartment-bottom">
-            <span class="compartment-num-large">01</span>
-          </div>
+          <span class="compartment-index">01</span>
+          <div class="compartment-title push-text">Start Hub</div>
+          <p class="compartment-desc">A clean platform, a clear schedule, a quiet departure.</p>
         </div>
-
         <div class="compartment">
-          <div class="compartment-top">
-            <span class="compartment-line">Line 02 — Foundry District</span>
-            <span class="compartment-num">02 / 04</span>
-          </div>
-          <div class="compartment-body">
-            <h3 class="compartment-title">Foundry Platform</h3>
-            <p class="compartment-desc">Steel and stone, brushed clean. The foundry stop serves the old industrial quarter — now a district of makers, mills, and midnight diners.</p>
-            <span class="compartment-tag">steel, brushed clean</span>
-          </div>
-          <div class="compartment-bottom">
-            <span class="compartment-num-large">02</span>
-          </div>
+          <span class="compartment-index">02</span>
+          <div class="compartment-title push-text">Foundry Platform</div>
+          <p class="compartment-desc">Brushed steel serving the old industrial quarter — now a district of makers.</p>
         </div>
-
         <div class="compartment">
-          <div class="compartment-top">
-            <span class="compartment-line">Line 03 — Meridian Loop</span>
-            <span class="compartment-num">03 / 04</span>
-          </div>
-          <div class="compartment-body">
-            <h3 class="compartment-title">Meridian Concourse</h3>
-            <p class="compartment-desc">Wide and unhurried. The meridian loop crosses the city's spine — a broad concourse where three lines converge and travelers find their way.</p>
-            <span class="compartment-tag">wide, unhurried</span>
-          </div>
-          <div class="compartment-bottom">
-            <span class="compartment-num-large">03</span>
-          </div>
+          <span class="compartment-index">03</span>
+          <div class="compartment-title push-text">Meridian Concourse</div>
+          <p class="compartment-desc">Wide and unhurried — where three lines converge.</p>
         </div>
-
         <div class="compartment">
-          <div class="compartment-top">
-            <span class="compartment-line">Line 04 — Terminus Nine</span>
-            <span class="compartment-num">04 / 04</span>
-          </div>
-          <div class="compartment-body">
-            <h3 class="compartment-title">Terminus Nine</h3>
-            <p class="compartment-desc">Journey's end. The final station on the line — where the tunnel opens to sky and every passenger steps out into something new.</p>
-            <span class="compartment-tag">journey's end</span>
-          </div>
-          <div class="compartment-bottom">
-            <span class="compartment-num-large">04</span>
-          </div>
+          <span class="compartment-index">04</span>
+          <div class="compartment-title push-text">Lantern Row</div>
+          <p class="compartment-desc">A softer stop at the edge of the old market — warm lights, long benches.</p>
         </div>
-
+        <div class="compartment">
+          <span class="compartment-index">05</span>
+          <div class="compartment-title push-text">Terminus North</div>
+          <p class="compartment-desc">The last car before the tunnel bends. Quieter here.</p>
+        </div>
       </div>
     </div>
   </section>
 
-  <!-- ============ ACCOUNT / LOGIN-SIGNUP ============ -->
   <section id="account">
-    <span class="eyebrow-hand">your line, your account</span>
-    <h2 class="section-title">Already riding with us?</h2>
-    <p class="account-sub">Sign in to manage your passes, or create an account to start your first trip.</p>
+    <h2 class="section-title push-text">Already riding with us?</h2>
     <div class="account-actions">
       <button class="glass-btn glass-btn--solid" onclick="window.location.href='auth.html?mode=login'">Log In</button>
       <button class="glass-btn" onclick="window.location.href='auth.html?mode=signup'">Sign Up</button>
@@ -522,10 +254,9 @@
   <script>
     gsap.registerPlugin(ScrollTrigger);
 
-    /* ============ SPLASH SEQUENCE ============ */
+    /* SPLASH */
     const splashTl = gsap.timeline();
     splashTl.to('#splash-fill', {width:'100%', duration:1.6, ease:'power2.inOut'});
-    splashTl.to('.loader-facet-group', {rotate:360, duration:1.6, ease:'power2.inOut'}, 0);
     splashTl.to('#loader-visual', {scale:0.9, duration:0.5, ease:'power2.in'}, 1.5);
     splashTl.to('.splash-word, .splash-bar', {opacity:0, duration:0.4}, 1.6);
     splashTl.to('#splash', {
@@ -534,119 +265,311 @@
       onComplete:() => { document.getElementById('splash').style.display = 'none'; }
     }, 1.9);
 
-    /* ============ HERO PARALLAX ============ */
-    gsap.to('#hero-bg', {
-      yPercent:18,
-      scale:1.08,
-      ease:'none',
-      scrollTrigger:{ trigger:'#hero', start:'top top', end:'bottom top', scrub:true }
-    });
-    gsap.to('#hero-scrim', {
-      backdropFilter:'blur(6px)',
-      ease:'none',
-      scrollTrigger:{ trigger:'#hero', start:'top top', end:'bottom top', scrub:true }
-    });
-    gsap.to('#hero-content', {
-      yPercent:-30, opacity:0.2, ease:'none',
-      scrollTrigger:{ trigger:'#hero', start:'top top', end:'bottom top', scrub:true }
-    });
+    /* HERO PARALLAX */
+    gsap.to('#hero-bg', {yPercent:18, scale:1.08, ease:'none', scrollTrigger:{ trigger:'#hero', start:'top top', end:'bottom top', scrub:true }});
+    gsap.to('#hero-content', {yPercent:-30, opacity:0.2, ease:'none', scrollTrigger:{ trigger:'#hero', start:'top top', end:'bottom top', scrub:true }});
 
-    /* ============ THREE.JS RING (procedural stand-in for OBJ) ============ */
-    let renderer, scene, camera, ringGroup, objModelLoaded = false;
+    /* TEXT-PUSH — split any .push-text into per-letter spans and push away from cursor */
+    (function initTextPush(){
+      const nodes = document.querySelectorAll('.push-text');
+      const letters = [];
 
+      nodes.forEach(node => {
+        // Preserve inline color spans by walking children
+        const walk = (el) => {
+          const kids = Array.from(el.childNodes);
+          kids.forEach(k => {
+            if (k.nodeType === Node.TEXT_NODE){
+              const text = k.nodeValue;
+              const frag = document.createDocumentFragment();
+              for (const ch of text){
+                if (ch === ' ' || ch === '\u00A0'){
+                  const s = document.createElement('span');
+                  s.className = 'letter';
+                  s.style.display = 'inline-block';
+                  s.innerHTML = '&nbsp;';
+                  frag.appendChild(s);
+                  letters.push(s);
+                } else {
+                  const s = document.createElement('span');
+                  s.className = 'letter';
+                  s.textContent = ch;
+                  frag.appendChild(s);
+                  letters.push(s);
+                }
+              }
+              el.replaceChild(frag, k);
+            } else if (k.nodeType === Node.ELEMENT_NODE){
+              walk(k);
+            }
+          });
+        };
+        walk(node);
+      });
+
+      const RADIUS = 110;         // px influence radius
+      const STRENGTH = 46;        // max push in px
+      let mx = -9999, my = -9999;
+
+      window.addEventListener('pointermove', e => { mx = e.clientX; my = e.clientY; }, {passive:true});
+      window.addEventListener('pointerleave', () => { mx = -9999; my = -9999; });
+
+      function tick(){
+        for (const l of letters){
+          const r = l.getBoundingClientRect();
+          const cx = r.left + r.width/2;
+          const cy = r.top + r.height/2;
+          const dx = cx - mx;
+          const dy = cy - my;
+          const dist = Math.hypot(dx, dy);
+          if (dist < RADIUS){
+            const f = (1 - dist / RADIUS);
+            const nx = (dx / (dist || 1)) * f * STRENGTH;
+            const ny = (dy / (dist || 1)) * f * STRENGTH;
+            l.style.transform = `translate3d(${nx.toFixed(2)}px, ${ny.toFixed(2)}px, 0)`;
+          } else if (l.style.transform){
+            l.style.transform = '';
+          }
+        }
+        requestAnimationFrame(tick);
+      }
+      requestAnimationFrame(tick);
+    })();
+
+    /* LIQUID CURSOR — additive metaball WebGL shader */
+    (function initFluid(){
+      const canvas = document.getElementById('fluid-canvas');
+      const gl = canvas.getContext('webgl', { premultipliedAlpha:false, antialias:false, alpha:true });
+      if (!gl){ canvas.style.display = 'none'; return; }
+
+      const MAX_POINTS = 24;
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+      function resize(){
+        canvas.width  = Math.floor(window.innerWidth  * dpr);
+        canvas.height = Math.floor(window.innerHeight * dpr);
+        gl.viewport(0, 0, canvas.width, canvas.height);
+      }
+      window.addEventListener('resize', resize);
+      resize();
+
+      const vsSrc = 'attribute vec2 a_pos; void main(){ gl_Position = vec4(a_pos, 0.0, 1.0); }';
+
+      const fsSrc = [
+        'precision highp float;',
+        'uniform vec2 u_res;',
+        'uniform float u_dpr;',
+        'uniform vec4 u_points[' + MAX_POINTS + '];',
+        'uniform vec2 u_vel[' + MAX_POINTS + '];',
+        'uniform int u_count;',
+        'float field(vec2 p, vec2 c, float r, vec2 vel){',
+        '  vec2 d = p - c;',
+        '  float sp = length(vel);',
+        '  if (sp > 0.5){',
+        '    vec2 dir = vel / sp;',
+        '    float along = dot(d, dir);',
+        '    float stretch = 1.0 + clamp(sp * 0.012, 0.0, 2.0);',
+        '    d -= dir * along * (1.0 - 1.0/stretch);',
+        '  }',
+        '  return (r*r) / (dot(d,d) + 1.0);',
+        '}',
+        'void main(){',
+        '  vec2 uv = gl_FragCoord.xy;',
+        '  uv.y = u_res.y - uv.y;',
+        '  vec2 px = uv / u_dpr;',
+        '  float f = 0.0;',
+        '  for (int i=0; i<' + MAX_POINTS + '; i++){',
+        '    if (i >= u_count) break;',
+        '    vec4 pt = u_points[i];',
+        '    f += field(px, pt.xy, pt.z, u_vel[i]);',
+        '  }',
+        '  float body = smoothstep(0.85, 1.15, f);',
+        '  float rim  = smoothstep(1.15, 1.8, f) - body;',
+        // pure white -> under mix-blend-mode:difference, covered pixels invert to contrast color
+        '  vec3 col = vec3(1.0, 1.0, 1.0);',
+        '  float alpha = body + rim * 0.35;',
+        '  if (alpha < 0.002) discard;',
+        '  gl_FragColor = vec4(col, alpha);',
+        '}'
+      ].join('\n');
+
+      function compile(type, src){
+        const sh = gl.createShader(type);
+        gl.shaderSource(sh, src);
+        gl.compileShader(sh);
+        if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) console.error(gl.getShaderInfoLog(sh));
+        return sh;
+      }
+      const prog = gl.createProgram();
+      gl.attachShader(prog, compile(gl.VERTEX_SHADER, vsSrc));
+      gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, fsSrc));
+      gl.linkProgram(prog);
+      gl.useProgram(prog);
+
+      const buf = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, -1,1, 1,-1, 1,1]), gl.STATIC_DRAW);
+      const aPos = gl.getAttribLocation(prog, 'a_pos');
+      gl.enableVertexAttribArray(aPos);
+      gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
+
+      const uRes = gl.getUniformLocation(prog, 'u_res');
+      const uDpr = gl.getUniformLocation(prog, 'u_dpr');
+      const uPts = gl.getUniformLocation(prog, 'u_points');
+      const uVel = gl.getUniformLocation(prog, 'u_vel');
+      const uCount = gl.getUniformLocation(prog, 'u_count');
+
+      gl.enable(gl.BLEND);
+      gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+
+      let mx = window.innerWidth/2, my = window.innerHeight/2;
+      let px = mx, py = my, vx = 0, vy = 0;
+      const trail = [];
+      const MAX_TRAIL = 16;
+      const pts = new Float32Array(MAX_POINTS * 4);
+      const vels = new Float32Array(MAX_POINTS * 2);
+
+      window.addEventListener('pointermove', e => { mx = e.clientX; my = e.clientY; });
+      window.addEventListener('touchmove', e => {
+        if (e.touches && e.touches[0]){ mx = e.touches[0].clientX; my = e.touches[0].clientY; }
+      }, {passive:true});
+
+      let last = performance.now();
+      function frame(now){
+        const dt = Math.min(0.05, (now - last) / 1000);
+        last = now;
+        const k = 1 - Math.pow(0.002, dt);
+        const nx = px + (mx - px) * k;
+        const ny = py + (my - py) * k;
+        vx = (nx - px) / Math.max(dt, 0.001);
+        vy = (ny - py) / Math.max(dt, 0.001);
+        px = nx; py = ny;
+
+        trail.push({ x: px, y: py });
+        if (trail.length > MAX_TRAIL) trail.shift();
+        for (let i=0; i<trail.length-1; i++){
+          trail[i].vx = (trail[i+1].x - trail[i].x) * 12;
+          trail[i].vy = (trail[i+1].y - trail[i].y) * 12;
+        }
+        const lastT = trail[trail.length-1];
+        if (lastT){ lastT.vx = vx * 0.008; lastT.vy = vy * 0.008; }
+
+        const speed = Math.hypot(vx, vy);
+        const headR = 46 + Math.min(28, speed * 0.015);
+
+        let count = 0;
+        pts[0] = px; pts[1] = py; pts[2] = headR; pts[3] = 1.0;
+        vels[0] = vx * 0.008; vels[1] = vy * 0.008;
+        count = 1;
+
+        for (let i=0; i<trail.length && count < MAX_POINTS; i++){
+          const t = trail[i];
+          const fade = 1.0 - i / trail.length;
+          pts[count*4] = t.x; pts[count*4+1] = t.y;
+          pts[count*4+2] = 26 * fade + 6; pts[count*4+3] = 1.0;
+          vels[count*2] = t.vx || 0; vels[count*2+1] = t.vy || 0;
+          count++;
+        }
+
+        gl.clearColor(0,0,0,0);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        gl.uniform2f(uRes, canvas.width, canvas.height);
+        gl.uniform1f(uDpr, dpr);
+        gl.uniform4fv(uPts, pts);
+        gl.uniform2fv(uVel, vels);
+        gl.uniform1i(uCount, count);
+        gl.drawArrays(gl.TRIANGLES, 0, 6);
+        requestAnimationFrame(frame);
+      }
+      requestAnimationFrame(frame);
+    })();
+
+    /* AMBIENT AUDIO */
+    (function initAudio(){
+      const audio = document.getElementById('bg-audio');
+      const btn = document.getElementById('sound-toggle');
+      audio.volume = 0.35;
+      let started = false;
+      function reflect(){
+        btn.textContent = (started && !audio.paused) ? '♪' : '⛌';
+        gsap.to(btn, {opacity:1, duration:0.6, delay:2});
+      }
+      function tryStart(){
+        if (started) return;
+        audio.play().then(() => { started = true; reflect(); }).catch(() => {});
+      }
+      tryStart();
+      ['pointerdown','keydown','touchstart','wheel'].forEach(evt => {
+        window.addEventListener(evt, tryStart, {once:true, passive:true});
+      });
+      btn.addEventListener('click', () => {
+        if (audio.paused){ audio.play().then(() => { started = true; reflect(); }); }
+        else { audio.pause(); reflect(); }
+      });
+      reflect();
+    })();
+
+    /* THREE.JS RING */
+    let renderer, scene, camera, ringGroup;
     function buildProceduralRing(){
       const group = new THREE.Group();
-
       const bandGeo = new THREE.TorusGeometry(1.5, 0.55, 48, 128);
-      const bandMat = new THREE.MeshPhysicalMaterial({
-        color:0x1a1a1c, metalness:0.85, roughness:0.28,
-        clearcoat:0.6, clearcoatRoughness:0.25, reflectivity:0.5
-      });
+      const bandMat = new THREE.MeshPhysicalMaterial({color:0x1a1a1c, metalness:0.85, roughness:0.28, clearcoat:0.6, clearcoatRoughness:0.25, reflectivity:0.5});
       const band = new THREE.Mesh(bandGeo, bandMat);
       band.rotation.x = Math.PI/2;
       group.add(band);
-
-      const facetMat = new THREE.MeshPhysicalMaterial({
-        color:0x232326, metalness:0.9, roughness:0.2, clearcoat:0.8
-      });
+      const facetMat = new THREE.MeshPhysicalMaterial({color:0x232326, metalness:0.9, roughness:0.2, clearcoat:0.8});
       const crest = new THREE.Mesh(new THREE.IcosahedronGeometry(0.85, 0), facetMat);
-      crest.position.z = 0.55;
-      crest.scale.set(1,1,0.5);
+      crest.position.z = 0.55; crest.scale.set(1,1,0.5);
       group.add(crest);
-
       const lineMat = new THREE.LineBasicMaterial({color:0x8a8d91, transparent:true, opacity:0.6});
       const edges = new THREE.EdgesGeometry(crest.geometry);
       const wire = new THREE.LineSegments(edges, lineMat);
-      wire.scale.copy(crest.scale);
-      wire.position.copy(crest.position);
+      wire.scale.copy(crest.scale); wire.position.copy(crest.position);
       group.add(wire);
-
       return group;
     }
-
     function loadObjModel(){
       if (!THREE.OBJLoader) return;
-
       const loader = new THREE.OBJLoader();
-      loader.load(
-        'object.obj',
-        function (object) {
-          object.traverse(child => {
-            if (child.isMesh) {
-              child.material = child.material || new THREE.MeshStandardMaterial({ color: 0xd4d5d8 });
-              child.material.side = THREE.DoubleSide;
-              child.castShadow = true;
-              child.receiveShadow = true;
-            }
-          });
-          object.scale.set(0.3, 0.3, 0.3);
-          object.rotation.x = Math.PI * 0.15;
-          object.position.set(0, 0, 0);
-
-          if (ringGroup) {
-            while (ringGroup.children.length) ringGroup.remove(ringGroup.children[0]);
-            ringGroup.add(object);
+      loader.load('object.obj', function (object) {
+        object.traverse(child => {
+          if (child.isMesh) {
+            child.material = child.material || new THREE.MeshStandardMaterial({ color: 0xd4d5d8 });
+            child.material.side = THREE.DoubleSide;
+            child.castShadow = true; child.receiveShadow = true;
           }
-          objModelLoaded = true;
-        },
-        undefined,
-        function (error) {
-          console.warn('OBJ load failed, using fallback ring.', error);
+        });
+        object.scale.set(0.3, 0.3, 0.3);
+        object.rotation.x = Math.PI * 0.15;
+        object.position.set(0, 0, 0);
+        if (ringGroup) {
+          while (ringGroup.children.length) ringGroup.remove(ringGroup.children[0]);
+          ringGroup.add(object);
         }
-      );
+      }, undefined, function () {});
     }
-
     function initObjectScene(){
       const canvas = document.getElementById('object-canvas');
       renderer = new THREE.WebGLRenderer({canvas, antialias:true, alpha:true});
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
       renderer.setSize(window.innerWidth, window.innerHeight);
-
       scene = new THREE.Scene();
       camera = new THREE.PerspectiveCamera(38, window.innerWidth/window.innerHeight, 0.1, 100);
       camera.position.set(0, 0, 8);
-
       const key = new THREE.DirectionalLight(0xffffff, 1.4);
-      key.position.set(4, 5, 6);
-      scene.add(key);
+      key.position.set(4, 5, 6); scene.add(key);
       const fill = new THREE.DirectionalLight(0x8a8d91, 0.5);
-      fill.position.set(-5, -2, 3);
-      scene.add(fill);
+      fill.position.set(-5, -2, 3); scene.add(fill);
       scene.add(new THREE.AmbientLight(0x404040, 0.6));
-
       ringGroup = new THREE.Group();
-      ringGroup.scale.set(0.3, 0.3, 0.3);
+      ringGroup.scale.set(0.34, 0.34, 0.34);
       ringGroup.rotation.x = 0.3;
       ringGroup.add(buildProceduralRing());
       scene.add(ringGroup);
       loadObjModel();
-
-      function animate(){
-        requestAnimationFrame(animate);
-        renderer.render(scene, camera);
-      }
+      function animate(){ requestAnimationFrame(animate); renderer.render(scene, camera); }
       animate();
-
       window.addEventListener('resize', () => {
         camera.aspect = window.innerWidth/window.innerHeight;
         camera.updateProjectionMatrix();
@@ -655,62 +578,40 @@
     }
     initObjectScene();
 
-    const objTl = gsap.timeline({
-      scrollTrigger:{
-        trigger:'#object-section',
-        start:'top top',
-        end:'bottom bottom',
-        scrub:0.6,
-        onUpdate: self => {
-          const idx = Math.min(2, Math.floor(self.progress * 3));
-          document.querySelectorAll('.object-index span').forEach((el,i) => el.classList.toggle('active', i===idx));
-        }
-      }
-    });
-    objTl.to(ringGroup.rotation, {y: Math.PI*1.1, x:0.58}, 0);
-    objTl.to(ringGroup.position, {y:0.36}, 0);
-    objTl.to(ringGroup.position, {y:-0.16}, 0.5);
-    objTl.to(camera.position, {z:7.6, y:0.12}, 0);
+    const objTl = gsap.timeline({scrollTrigger:{trigger:'#object-section', start:'top top', end:'bottom bottom', scrub:0.6}});
+    objTl.to(ringGroup.rotation, {y: Math.PI*4, x:0.3 + Math.PI*0.6, ease:'none'}, 0);
+    objTl.to(ringGroup.scale, {x:0.44, y:0.44, z:0.44, ease:'power1.inOut'}, 0);
+    objTl.to(camera.position, {z:7.2, ease:'none'}, 0);
 
-    /* ============ HORIZONTAL COMPARTMENTS ============ */
+    /* HORIZONTAL COMPARTMENTS
+       Fix: cards after #3 were dark because the fade-in ScrollTrigger with `horizontal:true`
+       didn't detect the translated cards inside a vertically-pinned section. We now:
+       1) capture the horizontal tween and pass it as `containerAnimation` so each card's
+          fade uses the horizontal scroll position, and
+       2) keep initial opacity at 1 so nothing is ever stuck dim. */
     function initCompartmentScroll(){
       const track = document.getElementById('compartments-track');
       const pin = document.getElementById('compartments-pin');
       const distance = () => track.scrollWidth - window.innerWidth + window.innerWidth*0.08;
+      const horizTween = gsap.to(track, {
+        x: () => -distance(), ease:'none',
+        scrollTrigger:{trigger:'#compartments-section', start:'top top', end:() => '+=' + distance(), scrub:0.6, pin:pin, pinSpacing:true, invalidateOnRefresh:true}
+      });
 
-      gsap.to(track, {
-        x: () => -distance(),
-        ease:'none',
-        scrollTrigger:{
-          trigger:'#compartments-section',
-          start:'top top',
-          end:() => '+=' + distance(),
-          scrub:0.6,
-          pin:pin,
-          pinSpacing:true,
-          invalidateOnRefresh:true,
-          onUpdate: self => {
-            document.getElementById('metro-rail-fill').style.width = (self.progress*100) + '%';
-            const idx = Math.min(3, Math.floor(self.progress * 4));
-            document.querySelectorAll('.metro-station').forEach((el,i) => el.classList.toggle('active', i===idx));
+      gsap.utils.toArray('.compartment').forEach(card => {
+        gsap.fromTo(card, {opacity:0.55, y:8}, {
+          opacity:1, y:0, ease:'power2.out',
+          scrollTrigger:{
+            trigger:card,
+            containerAnimation:horizTween,
+            start:'left 85%',
+            end:'left 55%',
+            scrub:true
           }
-        }
+        });
       });
     }
     initCompartmentScroll();
-
-    gsap.utils.toArray('.compartment').forEach(card => {
-      gsap.fromTo(card, {opacity:0.35, y:14}, {
-        opacity:1, y:0, duration:0.6, ease:'power2.out',
-        scrollTrigger:{
-          trigger:card,
-          containerAnimation: gsap.getById && undefined,
-          start:'left 90%',
-          horizontal:true,
-          toggleActions:'play none none reverse'
-        }
-      });
-    });
 
     ScrollTrigger.refresh();
   </script>

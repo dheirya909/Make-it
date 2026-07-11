@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Metro Nexus — The Nexus Ring</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..900;1,6..96,400..900&family=Fleur+De+Leah&family=PT+Serif:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+<link rel="shortcut icon" href="/logo_wo_bg.png" type="image/x-icon">
+<style>
+  :root{
+    --ink:#0a0a0b; --ink-2:#141416; --ink-3:#1b1b1e;
+    --steel:#8a8d91; --mist:#c4c6c9; --paper:#f5f5f4;
+    --hair:rgba(255,255,255,0.08); --hair-strong:rgba(255,255,255,0.16);
+    --display:'PT Serif',serif; --body:'Bricolage Grotesque',serif; --hand:'Fleur De Leah',cursive;
+    --ease:cubic-bezier(.16,.8,.24,1);
+    --success:#6ee7b7; --warning:#fbbf24; --error:#fca5a5; --accent:#9bc1e8;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html,body{background:var(--ink);color:var(--paper);font-family:var(--body);-webkit-font-smoothing:antialiased;min-height:100vh;}
+  body{overflow-x:hidden;}
+  ::selection{background:var(--paper);color:var(--ink);}
+
+  .bg-grad{
+    position:fixed;inset:0;z-index:0;pointer-events:none;
+    background:
+      radial-gradient(900px 600px at 12% -8%, rgba(155,193,232,0.07), transparent 60%),
+      radial-gradient(800px 600px at 100% 110%, rgba(255,255,255,0.05), transparent 60%);
+  }
+
+  /* Navbar (same as dashboard) */
+  .topbar{
+    position:fixed;top:0;left:0;right:0;z-index:80;
+    display:flex;align-items:center;justify-content:space-between;
+    padding:18px clamp(20px,5vw,56px);
+    background:rgba(10,10,11,0.55);
+    backdrop-filter:blur(18px) saturate(140%);
+    -webkit-backdrop-filter:blur(18px) saturate(140%);
+    border-bottom:1px solid var(--hair);
+  }
+  .brand{font-family:var(--display);font-weight:700;font-size:18px;letter-spacing:0.06em;text-decoration:none;color:var(--paper);display:flex;align-items:center;gap:12px;}
+  .brand .dot{width:9px;height:9px;border-radius:50%;background:var(--success);box-shadow:0 0 12px var(--success);animation:pulse 2.4s infinite;}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+  .nav-links{display:flex;align-items:center;gap:6px;}
+  .nav-link{
+    font-family:var(--display);font-size:13px;letter-spacing:0.06em;text-transform:uppercase;
+    color:var(--steel);text-decoration:none;padding:9px 16px;border-radius:999px;
+    transition:all .3s var(--ease);position:relative;
+  }
+  .nav-link:hover{color:var(--paper);background:rgba(255,255,255,0.04);}
+  .nav-link.active{color:var(--paper);background:rgba(255,255,255,0.07);border:1px solid var(--hair-strong);}
+  .nav-link.active::after{content:'';position:absolute;bottom:-2px;left:50%;transform:translateX(-50%);width:5px;height:5px;border-radius:50%;background:var(--accent);box-shadow:0 0 8px var(--accent);}
+  .top-right{display:flex;align-items:center;gap:14px;}
+  .user-chip{display:flex;align-items:center;gap:10px;padding:6px 14px 6px 6px;border-radius:999px;border:1px solid var(--hair);background:rgba(255,255,255,0.03);}
+  .avatar{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#2a2a2e,#15151a);border:1px solid var(--hair-strong);display:flex;align-items:center;justify-content:center;font-family:var(--display);font-weight:700;font-size:13px;color:var(--mist);}
+  .user-chip .uname{font-family:var(--body);font-size:13px;max-width:120px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .logout-btn{background:none;border:1px solid var(--hair);color:var(--steel);padding:9px 16px;border-radius:999px;cursor:pointer;font-family:var(--body);font-size:12px;letter-spacing:0.08em;text-transform:uppercase;transition:all .3s var(--ease);}
+  .logout-btn:hover{color:var(--paper);border-color:var(--hair-strong);background:rgba(255,255,255,0.04);}
+  .nav-toggle{display:none;background:none;border:1px solid var(--hair);color:var(--paper);padding:8px 12px;border-radius:8px;cursor:pointer;font-size:18px;}
+
+  /* Hero */
+  .hero{position:relative;z-index:5;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:120px 24px 60px;text-align:center;}
+  #hero-canvas{position:absolute;inset:0;width:100%;height:100%;z-index:0;}
+  .hero-content{position:relative;z-index:2;max-width:760px;}
+  .hero .eyebrow{font-family:var(--hand);font-size:34px;color:var(--steel);display:block;line-height:1;margin-bottom:14px;}
+  .hero h1{font-family:var(--display);font-weight:500;font-size:clamp(48px,9vw,104px);letter-spacing:-0.02em;line-height:1;}
+  .hero h1 .accent{color:var(--accent);}
+  .hero p{font-family:var(--body);font-weight:300;font-size:17px;color:var(--steel);margin-top:20px;max-width:560px;margin-left:auto;margin-right:auto;}
+  .hero-scroll{position:absolute;bottom:30px;left:50%;transform:translateX(-50%);font-family:var(--display);font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:var(--steel);z-index:2;display:flex;flex-direction:column;align-items:center;gap:8px;}
+  .hero-scroll .line{width:1px;height:34px;background:linear-gradient(180deg,var(--steel),transparent);animation:scrollLine 2s infinite;}
+  @keyframes scrollLine{0%{transform:scaleY(0);transform-origin:top;}50%{transform:scaleY(1);transform-origin:top;}50.1%{transform:scaleY(1);transform-origin:bottom;}100%{transform:scaleY(0);transform-origin:bottom;}}
+
+  /* About */
+  .about{position:relative;z-index:5;max-width:980px;margin:0 auto;padding:80px clamp(20px,5vw,40px);}
+  .section-eyebrow{font-family:var(--hand);font-size:28px;color:var(--accent);display:block;line-height:1;}
+  .about h2{font-family:var(--display);font-weight:500;font-size:clamp(30px,5vw,46px);letter-spacing:-0.01em;margin-top:8px;margin-bottom:28px;}
+  .about-grid{display:grid;grid-template-columns:1fr 1fr;gap:40px;}
+  @media(max-width:760px){.about-grid{grid-template-columns:1fr;gap:28px;}}
+  .feat{display:flex;flex-direction:column;gap:10px;}
+  .feat .f-num{font-family:var(--display);font-size:12px;letter-spacing:0.14em;color:var(--accent);}
+  .feat h4{font-family:var(--display);font-weight:600;font-size:20px;}
+  .feat p{font-family:var(--body);font-weight:300;font-size:15px;color:var(--steel);line-height:1.6;}
+  .about-lead{font-family:var(--body);font-weight:300;font-size:18px;color:var(--mist);line-height:1.7;margin-bottom:40px;max-width:680px;}
+
+  /* Buy */
+  .buy{position:relative;z-index:5;max-width:980px;margin:0 auto;padding:40px clamp(20px,5vw,40px) 120px;text-align:center;}
+  .buy-card{
+    background:linear-gradient(135deg, rgba(255,255,255,0.07), rgba(255,255,255,0.02));
+    backdrop-filter:blur(14px) saturate(130%);
+    -webkit-backdrop-filter:blur(14px) saturate(130%);
+    border:1px solid var(--hair);border-radius:20px;padding:50px 40px;
+    box-shadow:0 18px 50px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.08);
+  }
+  .buy-price{font-family:var(--display);font-weight:500;font-size:clamp(40px,7vw,64px);letter-spacing:-0.02em;margin:18px 0;}
+  .buy-price .cur{font-size:0.46em;vertical-align:super;color:var(--steel);margin-right:6px;}
+  .buy-sub{font-family:var(--body);font-weight:300;font-size:14px;color:var(--steel);margin-bottom:28px;}
+  .btn{border:none;border-radius:10px;padding:16px 36px;cursor:pointer;font-family:var(--body);font-size:13px;letter-spacing:0.12em;text-transform:uppercase;font-weight:500;transition:all .3s var(--ease);}
+  .btn-primary{background:var(--paper);color:var(--ink);}
+  .btn-primary:hover{background:var(--mist);transform:translateY(-1px);}
+  .btn-primary:disabled{opacity:.5;cursor:wait;transform:none;}
+  .btn-ghost{background:rgba(255,255,255,0.04);color:var(--paper);border:1px solid var(--hair-strong);}
+  .btn-ghost:hover{background:rgba(255,255,255,0.08);}
+  .owned-badge{display:inline-flex;align-items:center;gap:10px;padding:14px 26px;border-radius:999px;background:rgba(110,231,183,0.08);border:1px solid rgba(110,231,183,0.25);font-family:var(--display);font-size:14px;color:var(--success);}
+  .owned-badge::before{content:'';width:8px;height:8px;border-radius:50%;background:var(--success);box-shadow:0 0 10px var(--success);animation:pulse 2s infinite;}
+  .buy-error{color:var(--error);font-family:var(--body);font-size:13px;margin-top:14px;display:none;}
+  .buy-error.show{display:block;}
+
+  .toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%) translateY(20px);z-index:300;background:var(--ink-3);border:1px solid var(--hair-strong);color:var(--paper);padding:13px 22px;border-radius:999px;font-family:var(--body);font-size:13px;opacity:0;transition:all .4s var(--ease);box-shadow:0 12px 40px rgba(0,0,0,0.4);pointer-events:none;}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+  .loader{position:fixed;inset:0;z-index:500;background:var(--ink);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:18px;transition:opacity .5s var(--ease);}
+  .loader.hide{opacity:0;pointer-events:none;}
+  .loader .l-eyebrow{font-family:var(--hand);font-size:26px;color:var(--steel);}
+  .loader .l-msg{font-family:var(--display);font-size:18px;color:var(--mist);}
+  .spinner{width:34px;height:34px;border:2px solid var(--hair);border-top-color:var(--paper);border-radius:50%;animation:spin .8s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  @media(max-width:820px){
+    .nav-links{display:none;}
+    .nav-toggle{display:block;}
+    .nav-links.open{display:flex;flex-direction:column;position:fixed;top:64px;left:0;right:0;background:rgba(10,10,11,0.96);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);padding:18px clamp(20px,5vw,40px);gap:8px;border-bottom:1px solid var(--hair);z-index:79;}
+    .nav-links.open .nav-link{width:100%;padding:14px 16px;}
+  }
+  @media(max-width:560px){
+    .user-chip .uname{display:none;}
+    .buy-card{padding:36px 24px;}
+    .about{padding:60px 20px;}
+  }
+</style>
+</head>
+<body>
+
+  <div class="bg-grad"></div>
+
+  <div class="loader" id="loader">
+    <span class="l-eyebrow">metro nexus</span>
+    <div class="spinner"></div>
+    <span class="l-msg">Forging your ring…</span>
+  </div>
+
+  <!-- Navbar -->
+  <header class="topbar">
+    <a href="dashboard.html" class="brand"><span class="dot"></span>METRO&nbsp;NEXUS</a>
+    <nav class="nav-links" id="nav-links">
+      <a href="dashboard.html" class="nav-link">Dashboard</a>
+      <a href="ring.html" class="nav-link active">The Nexus Ring</a>
+      <a href="map.html" class="nav-link">Map</a>
+    </nav>
+    <div class="top-right">
+      <div class="user-chip"><div class="avatar" id="avatar">·</div><span class="uname" id="nav-name">—</span></div>
+      <button class="logout-btn" id="logout-btn">Log out</button>
+      <button class="nav-toggle" id="nav-toggle">&#9776;</button>
+    </div>
+  </header>
+
+  <!-- Hero with 3D object.obj -->
+  <section class="hero">
+    <canvas id="hero-canvas"></canvas>
+    <div class="hero-content">
+      <span class="eyebrow">introducing</span>
+      <h1>Nexus <span class="accent">Ring</span></h1>
+      <p>One ring. Every line. Every pod. Your fare, your identity, your journey — all on your finger.</p>
+    </div>
+    <div class="hero-scroll"><span>Scroll</span><span class="line"></span></div>
+  </section>
+
+  <!-- About -->
+  <section class="about">
+    <span class="section-eyebrow">about the ring</span>
+    <h2>What is the Nexus Ring?</h2>
+    <p class="about-lead">The Nexus Ring is a smart wearable that pairs with every Metro Nexus pod. Tap to board, tap to exit — the pod senses exactly where you get on and where you step off, then charges you only for the distance you actually travelled. No scanners, no gates, no fumbling for a phone. Just walk in and walk out.</p>
+    <div class="about-grid">
+      <div class="feat">
+        <span class="f-num">01 — Boarding</span>
+        <h4>Tap-free boarding</h4>
+        <p>The pod detects your ring the moment you step inside and links the ride to your account automatically.</p>
+      </div>
+      <div class="feat">
+        <span class="f-num">02 — Sensing</span>
+        <h4>Exit &amp; location sensing</h4>
+        <p>On-board sensors read where you leave the pod, so you're billed only for the segment you actually rode.</p>
+      </div>
+      <div class="feat">
+        <span class="f-num">03 — Billing</span>
+        <h4>Charged on exit, not on book</h4>
+        <p>Booking a ride holds nothing. Your wallet is debited only once the pod confirms you've disembarked.</p>
+      </div>
+      <div class="feat">
+        <span class="f-num">04 — Identity</span>
+        <h4>One identity across the line</h4>
+        <p>Your ring is your wallet, your pass and your live pod tracker — all without taking out your phone.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Buy -->
+  <section class="buy">
+    <div class="buy-card">
+      <span class="section-eyebrow">own the ring</span>
+      <div class="buy-price"><span class="cur">₹</span>2,499</div>
+      <div class="buy-sub">One-time purchase. Links to your Metro Nexus account instantly.</div>
+      <div id="buy-actions">
+        <button class="btn btn-primary" id="buy-btn">Buy the Nexus Ring</button>
+      </div>
+      <div class="buy-error" id="buy-error"></div>
+    </div>
+  </section>
+
+  <div class="toast" id="toast"></div>
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+  <!-- Three.js + OBJLoader -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js"></script>
+
+  <script>
+  /* ============ FIREBASE ============ */
+  const firebaseConfig = {
+    apiKey: "AIzaSyBn556xKCIzqT2qBmhgONEpy6yr5V10vdI",
+    authDomain: "metro-nexus.firebaseapp.com",
+    projectId: "metro-nexus",
+    storageBucket: "metro-nexus.firebasestorage.app",
+    messagingSenderId: "275190918417",
+    appId: "1:275190918417:web:22b21a6bc111c0ec6230b0"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+  const db = firebase.firestore();
+
+  let currentUser=null, profile=null;
+
+  auth.onAuthStateChanged(async (user)=>{
+    if(!user){ window.location.href='auth.html'; return; }
+    currentUser=user;
+    try{
+      const ref=db.collection('users').doc(user.uid);
+      const snap=await Promise.race([ref.get(), new Promise((_,r)=>setTimeout(()=>r(new Error('timeout')),4500))]);
+      if(snap.exists){ profile=snap.data(); }
+      else{
+        profile={name:user.displayName||user.email?.split('@')[0]||'traveler',email:user.email||'',balance:240,hasRing:false,createdAt:Date.now()};
+        await ref.set(profile);
+      }
+    }catch(e){
+      const lp=JSON.parse(localStorage.getItem('mn_profile_'+user.uid)||'null');
+      if(lp){ profile=lp; } else { profile={name:user.displayName||user.email?.split('@')[0]||'traveler',email:user.email||'',balance:240,hasRing:false,createdAt:Date.now()}; localStorage.setItem('mn_profile_'+user.uid,JSON.stringify(profile)); }
+    }
+    if(profile.hasRing===undefined) profile.hasRing=false;
+    hydrateIdentity(user, profile);
+    renderBuyState();
+    setTimeout(()=>document.getElementById('loader').classList.add('hide'),400);
+  });
+
+  function hydrateIdentity(user, p){
+    const name=p?.name||user.displayName||user.email?.split('@')[0]||'traveler';
+    document.getElementById('nav-name').textContent=name;
+    document.getElementById('avatar').textContent=(name[0]||'·').toUpperCase();
+  }
+
+  async function setHasRing(val){
+    try{
+      await db.collection('users').doc(currentUser.uid).set({hasRing:val,updatedAt:Date.now()},{merge:true});
+    }catch(e){
+      const p=JSON.parse(localStorage.getItem('mn_profile_'+currentUser.uid)||'{}');
+      p.hasRing=val; localStorage.setItem('mn_profile_'+currentUser.uid,JSON.stringify(p));
+    }
+    profile.hasRing=val;
+  }
+
+  function renderBuyState(){
+    const wrap=document.getElementById('buy-actions');
+    if(profile?.hasRing){
+      wrap.innerHTML='<span class="owned-badge">You own the Nexus Ring</span>';
+    }else{
+      wrap.innerHTML='<button class="btn btn-primary" id="buy-btn">Buy the Nexus Ring</button>';
+      document.getElementById('buy-btn').addEventListener('click', handleBuy);
+    }
+  }
+
+  async function handleBuy(){
+    const err=document.getElementById('buy-error'); err.classList.remove('show');
+    const btn=document.getElementById('buy-btn'); btn.disabled=true; btn.textContent='Processing…';
+    try{
+      await setHasRing(true);
+      renderBuyState();
+      toast('The Nexus Ring is yours. Visit your dashboard to see it live.');
+    }catch(e){
+      err.textContent='Could not complete purchase. Try again.'; err.classList.add('show');
+      btn.disabled=false; btn.textContent='Buy the Nexus Ring';
+    }
+  }
+
+  let toastTimer=null;
+  function toast(msg){
+    const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
+    clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('show'),3000);
+  }
+
+  document.getElementById('logout-btn').addEventListener('click',()=>{
+    auth.signOut().then(()=>window.location.href='auth.html');
+  });
+  document.getElementById('nav-toggle').addEventListener('click',()=>{
+    document.getElementById('nav-links').classList.toggle('open');
+  });
+
+  /* ============ HERO 3D — loads object.obj ============ */
+  (function initHero(){
+    if(!window.THREE)return;
+    const canvas=document.getElementById('hero-canvas');
+    const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+    function size(){
+      const w=canvas.clientWidth||window.innerWidth, h=canvas.clientHeight||window.innerHeight;
+      renderer.setSize(w,h,false);
+      if(cam){ cam.aspect=w/h; cam.updateProjectionMatrix(); }
+    }
+    const scene=new THREE.Scene();
+    const cam=new THREE.PerspectiveCamera(42, 1, 0.1, 100);
+    cam.position.set(0,0,7);
+    size();
+
+    const key=new THREE.DirectionalLight(0xffffff,1.6); key.position.set(4,5,6); scene.add(key);
+    const fill=new THREE.DirectionalLight(0x9bc1e8,0.7); fill.position.set(-5,-3,4); scene.add(fill);
+    const rim=new THREE.DirectionalLight(0xffffff,0.5); rim.position.set(0,4,-6); scene.add(rim);
+    scene.add(new THREE.AmbientLight(0x404040,0.6));
+
+    let obj=null, group=new THREE.Group(); scene.add(group);
+    const loader=new THREE.OBJLoader();
+    loader.load('object.obj',
+      (loaded)=>{
+        obj=loaded;
+        loaded.traverse(c=>{ if(c.isMesh){ c.material=new THREE.MeshPhysicalMaterial({color:0x1a1a1c,metalness:0.9,roughness:0.22,clearcoat:0.8,clearcoatRoughness:0.18,reflectivity:0.6}); } });
+        const box=new THREE.Box3().setFromObject(loaded);
+        const sizeBox=box.getSize(new THREE.Vector3());
+        const center=box.getCenter(new THREE.Vector3());
+        const maxDim=Math.max(sizeBox.x,sizeBox.y,sizeBox.z)||1;
+        const scale=3.4/maxDim;
+        loaded.scale.setScalar(scale);
+        loaded.position.sub(center.multiplyScalar(scale));
+        group.add(loaded);
+      },
+      undefined,
+      (err)=>{
+        // Fallback torus if object.obj missing
+        obj=new THREE.Mesh(new THREE.TorusGeometry(1.4,0.45,48,128),
+          new THREE.MeshPhysicalMaterial({color:0x1a1a1c,metalness:0.9,roughness:0.22,clearcoat:0.8,clearcoatRoughness:0.18}));
+        obj.position.set(0,0,0);
+        group.add(obj);
+      }
+    );
+
+    let mx=0,my=0,tx=0,ty=0;
+    window.addEventListener('mousemove',(e)=>{
+      tx=(e.clientX/window.innerWidth-0.5)*0.6;
+      ty=(e.clientY/window.innerHeight-0.5)*0.4;
+    });
+    window.addEventListener('resize',size);
+
+    (function animate(){
+      requestAnimationFrame(animate);
+      mx+=(tx-mx)*0.05; my+=(ty-my)*0.05;
+      group.rotation.y+=0.004;
+      group.rotation.x=my;
+      group.rotation.z=mx*0.3;
+      renderer.render(scene,cam);
+    })();
+  })();
+  </script>
+</body>
+</html>
