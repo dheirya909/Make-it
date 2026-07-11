@@ -6,7 +6,7 @@
 <title>Metro Nexus</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&display=swap" rel="stylesheet">
 <link rel="shortcut icon" href="/logo_wo_bg.png" type="image/x-icon">
 <style>
   :root{
@@ -17,7 +17,7 @@
     --paper:#f5f5f4;
     --hair:rgba(255,255,255,0.08);
     --hair-strong:rgba(255,255,255,0.16);
-    --font: 'Cormorant Garamond', serif;
+    --font: "Bricolage Grotesque", sans-serif;
     --ease: cubic-bezier(.16,.8,.24,1);
   }
   *{margin:0;padding:0;box-sizing:border-box;}
@@ -255,15 +255,18 @@
     gsap.registerPlugin(ScrollTrigger);
 
     /* SPLASH */
-    const splashTl = gsap.timeline();
-    splashTl.to('#splash-fill', {width:'100%', duration:1.6, ease:'power2.inOut'});
-    splashTl.to('#loader-visual', {scale:0.9, duration:0.5, ease:'power2.in'}, 1.5);
-    splashTl.to('.splash-word, .splash-bar', {opacity:0, duration:0.4}, 1.6);
-    splashTl.to('#splash', {
-      opacity:0, duration:0.9, ease:'power2.inOut',
-      onStart:() => gsap.to('nav', {opacity:1, duration:0.8, delay:0.2}),
-      onComplete:() => { document.getElementById('splash').style.display = 'none'; }
-    }, 1.9);
+const splashTl = gsap.timeline();
+
+splashTl.to('#splash-fill', { width: '100%', duration: 3.0, ease: 'power2.inOut' });
+splashTl.to('#loader-visual', { scale: 0.9, duration: 0.8, ease: 'power2.in' }, 2.8);
+splashTl.to('.splash-word, .splash-bar', { opacity: 0, duration: 0.6 }, 3.0);
+splashTl.to('#splash', {
+  opacity: 0, 
+  duration: 1.5, 
+  ease: 'power2.inOut',
+  onStart: () => gsap.to('nav', { opacity: 1, duration: 1.0, delay: 0.3 }),
+  onComplete: () => { document.getElementById('splash').style.display = 'none'; }
+}, 3.5);
 
     /* HERO PARALLAX */
     gsap.to('#hero-bg', {yPercent:18, scale:1.08, ease:'none', scrollTrigger:{ trigger:'#hero', start:'top top', end:'bottom top', scrub:true }});
@@ -337,12 +340,12 @@
     })();
 
     /* LIQUID CURSOR — additive metaball WebGL shader */
-    (function initFluid(){
+    (function initFuturisticHoverCursor(){
       const canvas = document.getElementById('fluid-canvas');
       const gl = canvas.getContext('webgl', { premultipliedAlpha:false, antialias:false, alpha:true });
       if (!gl){ canvas.style.display = 'none'; return; }
 
-      const MAX_POINTS = 24;
+      const MAX_POINTS = 80; 
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
 
       function resize(){
@@ -362,34 +365,46 @@
         'uniform vec4 u_points[' + MAX_POINTS + '];',
         'uniform vec2 u_vel[' + MAX_POINTS + '];',
         'uniform int u_count;',
-        'float field(vec2 p, vec2 c, float r, vec2 vel){',
-        '  vec2 d = p - c;',
+
+        'float field(vec2 p, vec4 pt, vec2 vel){',
+        '  vec2 d = p - pt.xy;',
         '  float sp = length(vel);',
-        '  if (sp > 0.5){',
+        
+        // pt.w > 0.5 means it's a fluid/aerodynamic blob
+        '  if (sp > 0.5 && pt.w > 0.5){',
         '    vec2 dir = vel / sp;',
         '    float along = dot(d, dir);',
-        '    float stretch = 1.0 + clamp(sp * 0.012, 0.0, 2.0);',
+        '    float stretch = 1.0 + clamp(sp * 0.02, 0.0, 3.0);',
         '    d -= dir * along * (1.0 - 1.0/stretch);',
         '  }',
-        '  return (r*r) / (dot(d,d) + 1.0);',
+        
+        '  float distSq = dot(d,d);',
+        
+        // pt.w < 0.5 means it's a rigid, digital SQUARE (used for pixels and the reticle)
+        '  if (pt.w < 0.5) {',
+        '    float boxDist = max(abs(d.x), abs(d.y));',
+        // Sharpen the falloff for squares so they don't melt as easily
+        '    distSq = boxDist * boxDist * 1.8;',
+        '  }',
+        
+        '  return (pt.z*pt.z) / (distSq + 1.0);',
         '}',
+
         'void main(){',
         '  vec2 uv = gl_FragCoord.xy;',
         '  uv.y = u_res.y - uv.y;',
         '  vec2 px = uv / u_dpr;',
         '  float f = 0.0;',
+        
         '  for (int i=0; i<' + MAX_POINTS + '; i++){',
         '    if (i >= u_count) break;',
-        '    vec4 pt = u_points[i];',
-        '    f += field(px, pt.xy, pt.z, u_vel[i]);',
+        '    f += field(px, u_points[i], u_vel[i]);',
         '  }',
-        '  float body = smoothstep(0.85, 1.15, f);',
-        '  float rim  = smoothstep(1.15, 1.8, f) - body;',
-        // pure white -> under mix-blend-mode:difference, covered pixels invert to contrast color
-        '  vec3 col = vec3(1.0, 1.0, 1.0);',
-        '  float alpha = body + rim * 0.35;',
-        '  if (alpha < 0.002) discard;',
-        '  gl_FragColor = vec4(col, alpha);',
+
+        // High contrast threshold for a crisp, glowing-edge look
+        '  float paint = smoothstep(0.85, 0.95, f);',
+        '  if (paint < 0.01) discard;',
+        '  gl_FragColor = vec4(1.0, 1.0, 1.0, paint);',
         '}'
       ].join('\n');
 
@@ -424,26 +439,57 @@
 
       let mx = window.innerWidth/2, my = window.innerHeight/2;
       let px = mx, py = my, vx = 0, vy = 0;
+      
       const trail = [];
-      const MAX_TRAIL = 16;
+      const MAX_TRAIL = 12; 
+      const pixels = []; 
+      
       const pts = new Float32Array(MAX_POINTS * 4);
       const vels = new Float32Array(MAX_POINTS * 2);
 
+      // --- DOM HOVER DETECTION ---
+      let isHovering = false;
+      let hoverFactor = 0; 
+      
       window.addEventListener('pointermove', e => { mx = e.clientX; my = e.clientY; });
-      window.addEventListener('touchmove', e => {
-        if (e.touches && e.touches[0]){ mx = e.touches[0].clientX; my = e.touches[0].clientY; }
-      }, {passive:true});
+      
+      window.addEventListener('mouseover', e => {
+        if (e.target.closest('button, a, input, [role="button"]')) {
+            isHovering = true;
+        } else {
+            isHovering = false;
+        }
+      });
 
       let last = performance.now();
+      
       function frame(now){
         const dt = Math.min(0.05, (now - last) / 1000);
         last = now;
-        const k = 1 - Math.pow(0.002, dt);
+        
+        const targetHover = isHovering ? 1.0 : 0.0;
+        hoverFactor += (targetHover - hoverFactor) * 12.0 * dt; 
+        
+        const k = 1 - Math.pow(0.0005, dt); // Snappy robotic tracking
         const nx = px + (mx - px) * k;
         const ny = py + (my - py) * k;
         vx = (nx - px) / Math.max(dt, 0.001);
         vy = (ny - py) / Math.max(dt, 0.001);
         px = nx; py = ny;
+        const speed = Math.hypot(vx, vy);
+
+        // PIXEL SHEDDING (Disabled slightly while hovering to keep the lock-on clean)
+        if (speed > 400 && pixels.length < 40 && Math.random() > 0.3 && hoverFactor < 0.2) {
+            const angle = Math.atan2(vy, vx) + (Math.random() - 0.5) * 1.5; 
+            const dropSpeed = speed * (0.1 + Math.random() * 0.3);
+            pixels.push({
+                x: px, y: py,
+                vx: Math.cos(angle) * dropSpeed,
+                vy: Math.sin(angle) * dropSpeed,
+                life: 1.0, 
+                size: 2 + Math.random() * 5 
+            });
+        }
 
         trail.push({ x: px, y: py });
         if (trail.length > MAX_TRAIL) trail.shift();
@@ -454,21 +500,68 @@
         const lastT = trail[trail.length-1];
         if (lastT){ lastT.vx = vx * 0.008; lastT.vy = vy * 0.008; }
 
-        const speed = Math.hypot(vx, vy);
-        const headR = 46 + Math.min(28, speed * 0.015);
+        for (let i = pixels.length - 1; i >= 0; i--) {
+            let p = pixels[i];
+            p.life -= dt * 2.0; 
+            if (p.life <= 0) {
+                pixels.splice(i, 1);
+                continue;
+            }
+            p.x += p.vx * dt;
+            p.y += p.vy * dt;
+            p.vx *= 0.85; 
+            p.vy *= 0.85;
+        }
 
+        const baseHeadR = 18 + Math.min(10, speed * 0.01); 
         let count = 0;
-        pts[0] = px; pts[1] = py; pts[2] = headR; pts[3] = 1.0;
-        vels[0] = vx * 0.008; vels[1] = vy * 0.008;
+        
+        // 1. THE MAIN CORE (Shrinks down into a precise dot when hovering)
+        const headR = baseHeadR * (1 - hoverFactor) + 6 * hoverFactor;
+        pts[0] = px; pts[1] = py; pts[2] = headR; 
+        pts[3] = 1.0; // Blob flag
+        vels[0] = vx * 0.01; vels[1] = vy * 0.01; 
         count = 1;
 
+        // 2. THE TARGET LOCK RETICLE (Deploys 4 rotating squares)
+        if (hoverFactor > 0.01) {
+            const spread = 24 * hoverFactor; // Radius of the lock-on ring
+            const dotR = 7 * hoverFactor;    // Size of the bracket squares
+            const rotation = now * 0.002;    // Slow mechanical rotation
+            
+            for (let j = 0; j < 4; j++) {
+                const angle = rotation + (j * (Math.PI / 2)); // Space 4 points at 90 degrees
+                pts[count*4] = px + Math.cos(angle) * spread; 
+                pts[count*4+1] = py + Math.sin(angle) * spread;
+                pts[count*4+2] = dotR; 
+                // Flag 0.0 forces the shader to render these as sharp geometric squares
+                pts[count*4+3] = 0.0; 
+                vels[count*2] = 0; vels[count*2+1] = 0; // No velocity stretch for HUD elements
+                count++;
+            }
+        }
+
+        // 3. THE DATA CABLE TRAIL (Retracts/fades out seamlessly when locking on)
+        const trailFade = 1.0 - hoverFactor;
         for (let i=0; i<trail.length && count < MAX_POINTS; i++){
           const t = trail[i];
           const fade = 1.0 - i / trail.length;
           pts[count*4] = t.x; pts[count*4+1] = t.y;
-          pts[count*4+2] = 26 * fade + 6; pts[count*4+3] = 1.0;
+          pts[count*4+2] = (baseHeadR * 0.6) * Math.pow(fade, 2.0) * trailFade; 
+          pts[count*4+3] = 1.0; 
           vels[count*2] = t.vx || 0; vels[count*2+1] = t.vy || 0;
           count++;
+        }
+
+        // 4. THE SHED PIXELS (Rendered as squares)
+        for (let i=0; i<pixels.length && count < MAX_POINTS; i++) {
+            const p = pixels[i];
+            pts[count*4] = p.x; pts[count*4+1] = p.y;
+            pts[count*4+2] = p.size * Math.pow(p.life, 0.5); 
+            pts[count*4+3] = 0.0; // Square flag
+            // Stretch the pixels slightly based on velocity to look like motion-blurred data
+            vels[count*2] = p.vx * 0.015; vels[count*2+1] = p.vy * 0.015;
+            count++;
         }
 
         gl.clearColor(0,0,0,0);
@@ -483,7 +576,7 @@
       }
       requestAnimationFrame(frame);
     })();
-
+    
     /* AMBIENT AUDIO */
     (function initAudio(){
       const audio = document.getElementById('bg-audio');

@@ -6,14 +6,14 @@
 <title>Metro Nexus — Account</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&display=swap" rel="stylesheet">
 <link rel="shortcut icon" href="/logo_wo_bg.png" type="image/x-icon">
 <style>
   :root{
     --ink:#0a0a0b; --ink-2:#141416;
     --steel:#8a8d91; --mist:#c4c6c9; --paper:#f5f5f4;
     --hair:rgba(255,255,255,0.08); --hair-strong:rgba(255,255,255,0.16);
-    --font:'Cormorant Garamond', serif;
+    --font:"Bricolage Grotesque", sans-serif;
     --ease:cubic-bezier(.16,.8,.24,1);
     --glass-bg:linear-gradient(135deg, rgba(255,255,255,0.09) 0%, rgba(255,255,255,0.03) 55%, rgba(255,255,255,0.06) 100%);
     --glass-border:1px solid rgba(255,255,255,0.14);
@@ -245,6 +245,21 @@
     const loginForm = document.getElementById('login-form');
     const signupForm = document.getElementById('signup-form');
     if (mode === 'signup') { loginForm.classList.add('hidden'); signupForm.classList.remove('hidden'); }
+    // ========== FORM SWITCHING LOGIC ==========
+const gotoSignup = document.getElementById('goto-signup');
+const gotoLogin = document.getElementById('goto-login');
+
+gotoSignup.addEventListener('click', (e) => {
+  e.preventDefault();
+  loginForm.classList.add('hidden');
+  signupForm.classList.remove('hidden');
+});
+
+gotoLogin.addEventListener('click', (e) => {
+  e.preventDefault();
+  signupForm.classList.add('hidden');
+  loginForm.classList.remove('hidden');
+});
 
     /* ========== METAL CLICK SOUND (with reverb) ========== */
     (function initMetalClick(){
@@ -390,87 +405,275 @@
     })();
 
     /* ========== LIQUID METABALL CURSOR ========== */
-    (function initFluid(){
+    (function initMetroNexusCursor(){
       const canvas = document.getElementById('fluid-canvas');
       const gl = canvas.getContext('webgl', { premultipliedAlpha:false, antialias:false, alpha:true });
       if (!gl){ canvas.style.display = 'none'; return; }
-      const MAX_POINTS = 24;
+
+      const MAX_POINTS = 80; 
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      function resize(){ canvas.width = Math.floor(window.innerWidth*dpr); canvas.height = Math.floor(window.innerHeight*dpr); gl.viewport(0,0,canvas.width,canvas.height); }
-      window.addEventListener('resize', resize); resize();
+
+      function resize(){
+        canvas.width  = Math.floor(window.innerWidth  * dpr);
+        canvas.height = Math.floor(window.innerHeight * dpr);
+        gl.viewport(0, 0, canvas.width, canvas.height);
+      }
+      window.addEventListener('resize', resize);
+      resize();
+
       const vsSrc = 'attribute vec2 a_pos; void main(){ gl_Position = vec4(a_pos, 0.0, 1.0); }';
-      const fsSrc = ['precision highp float;','uniform vec2 u_res;','uniform float u_dpr;','uniform vec4 u_points['+MAX_POINTS+'];','uniform vec2 u_vel['+MAX_POINTS+'];','uniform int u_count;',
-        'float field(vec2 p, vec2 c, float r, vec2 vel){','vec2 d=p-c; float sp=length(vel);',
-        'if(sp>0.5){ vec2 dir=vel/sp; float along=dot(d,dir); float stretch=1.0+clamp(sp*0.012,0.0,2.0); d-=dir*along*(1.0-1.0/stretch);}',
-        'return (r*r)/(dot(d,d)+1.0);}',
-        'void main(){ vec2 uv=gl_FragCoord.xy; uv.y=u_res.y-uv.y; vec2 px=uv/u_dpr; float f=0.0;',
-        'for(int i=0;i<'+MAX_POINTS+';i++){ if(i>=u_count) break; vec4 pt=u_points[i]; f+=field(px,pt.xy,pt.z,u_vel[i]);}',
-        'float body=smoothstep(0.85,1.15,f); float rim=smoothstep(1.15,1.8,f)-body;',
-        'vec3 col=vec3(1.0); float alpha=body+rim*0.35; if(alpha<0.002) discard;',
-        'gl_FragColor=vec4(col,alpha);}'].join('\n');
-      function compile(t,s){ const sh=gl.createShader(t); gl.shaderSource(sh,s); gl.compileShader(sh); return sh; }
-      const prog=gl.createProgram();
+
+      const fsSrc = [
+        'precision highp float;',
+        'uniform vec2 u_res;',
+        'uniform float u_dpr;',
+        'uniform vec4 u_points[' + MAX_POINTS + '];',
+        'uniform vec2 u_vel[' + MAX_POINTS + '];',
+        'uniform int u_count;',
+
+        'float field(vec2 p, vec4 pt, vec2 vel){',
+        '  vec2 d = p - pt.xy;',
+        '  float sp = length(vel);',
+        
+        '  if (sp > 0.5){',
+        '    vec2 dir = vel / sp;',
+        '    float along = dot(d, dir);',
+        '    float stretch = 1.0 + clamp(sp * 0.02, 0.0, 8.0);', 
+        '    d -= dir * along * (1.0 - 1.0/stretch);',
+        '  }',
+        
+        '  float distSq = dot(d,d);',
+        
+        '  if (pt.w < 0.5) {',
+        '    float boxDist = max(abs(d.x), abs(d.y));',
+        '    distSq = boxDist * boxDist * 1.8;',
+        '  }',
+        
+        '  return (pt.z*pt.z) / (distSq + 1.0);',
+        '}',
+
+        'void main(){',
+        '  vec2 uv = gl_FragCoord.xy;',
+        '  uv.y = u_res.y - uv.y;',
+        '  vec2 px = uv / u_dpr;',
+        '  float f = 0.0;',
+        
+        '  for (int i=0; i<' + MAX_POINTS + '; i++){',
+        '    if (i >= u_count) break;',
+        '    f += field(px, u_points[i], u_vel[i]);',
+        '  }',
+
+        '  float paint = smoothstep(0.85, 0.95, f);',
+        '  if (paint < 0.01) discard;',
+        '  gl_FragColor = vec4(1.0, 1.0, 1.0, paint);',
+        '}'
+      ].join('\n');
+
+      function compile(type, src){
+        const sh = gl.createShader(type);
+        gl.shaderSource(sh, src);
+        gl.compileShader(sh);
+        if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) console.error(gl.getShaderInfoLog(sh));
+        return sh;
+      }
+      const prog = gl.createProgram();
       gl.attachShader(prog, compile(gl.VERTEX_SHADER, vsSrc));
       gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, fsSrc));
-      gl.linkProgram(prog); gl.useProgram(prog);
-      const buf=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, buf);
-      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1,1,-1,-1,1,-1,1,1,-1,1,1]), gl.STATIC_DRAW);
-      const aPos=gl.getAttribLocation(prog,'a_pos'); gl.enableVertexAttribArray(aPos); gl.vertexAttribPointer(aPos,2,gl.FLOAT,false,0,0);
-      const uRes=gl.getUniformLocation(prog,'u_res'), uDpr=gl.getUniformLocation(prog,'u_dpr'),
-            uPts=gl.getUniformLocation(prog,'u_points'), uVel=gl.getUniformLocation(prog,'u_vel'),
-            uCount=gl.getUniformLocation(prog,'u_count');
-      gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-      let mx=window.innerWidth/2, my=window.innerHeight/2, px=mx, py=my, vx=0, vy=0;
-      const trail=[], MAX_TRAIL=16;
-      const pts=new Float32Array(MAX_POINTS*4), vels=new Float32Array(MAX_POINTS*2);
-      window.addEventListener('pointermove', e => { mx=e.clientX; my=e.clientY; });
-      let last=performance.now();
+      gl.linkProgram(prog);
+      gl.useProgram(prog);
+
+      const buf = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, -1,1, 1,-1, 1,1]), gl.STATIC_DRAW);
+      const aPos = gl.getAttribLocation(prog, 'a_pos');
+      gl.enableVertexAttribArray(aPos);
+      gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
+
+      const uRes = gl.getUniformLocation(prog, 'u_res');
+      const uDpr = gl.getUniformLocation(prog, 'u_dpr');
+      const uPts = gl.getUniformLocation(prog, 'u_points');
+      const uVel = gl.getUniformLocation(prog, 'u_vel');
+      const uCount = gl.getUniformLocation(prog, 'u_count');
+
+      gl.enable(gl.BLEND);
+      gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+
+      let mx = window.innerWidth/2, my = window.innerHeight/2;
+      let px = mx, py = my, vx = 0, vy = 0;
+      
+      const trail = [];
+      const MAX_TRAIL = 12; 
+      const pixels = []; 
+      
+      const pts = new Float32Array(MAX_POINTS * 4);
+      const vels = new Float32Array(MAX_POINTS * 2);
+
+      let hoverType = 0; 
+      let hoverBtnFactor = 0; 
+      let hoverTxtFactor = 0;
+      
+      window.addEventListener('pointermove', e => { mx = e.clientX; my = e.clientY; });
+      
+      window.addEventListener('mouseover', e => {
+        if (e.target.closest('input[type="text"], input[type="email"], input[type="password"], input[type="search"], input[type="number"], textarea, [contenteditable="true"]')) {
+            hoverType = 2;
+        } else if (e.target.closest('button, a, input[type="submit"], [role="button"]')) {
+            hoverType = 1;
+        } else {
+            hoverType = 0;
+        }
+      });
+
+      let last = performance.now();
+      
       function frame(now){
-        const dt=Math.min(0.05,(now-last)/1000); last=now;
-        const k=1-Math.pow(0.002,dt); const nx=px+(mx-px)*k, ny=py+(my-py)*k;
-        vx=(nx-px)/Math.max(dt,0.001); vy=(ny-py)/Math.max(dt,0.001); px=nx; py=ny;
-        trail.push({x:px,y:py}); if(trail.length>MAX_TRAIL) trail.shift();
-        for(let i=0;i<trail.length-1;i++){ trail[i].vx=(trail[i+1].x-trail[i].x)*12; trail[i].vy=(trail[i+1].y-trail[i].y)*12;}
-        const lastT=trail[trail.length-1]; if(lastT){ lastT.vx=vx*0.008; lastT.vy=vy*0.008;}
-        const speed=Math.hypot(vx,vy), headR=46+Math.min(28,speed*0.015);
-        let count=0; pts[0]=px; pts[1]=py; pts[2]=headR; pts[3]=1; vels[0]=vx*0.008; vels[1]=vy*0.008; count=1;
-        for(let i=0;i<trail.length && count<MAX_POINTS;i++){ const t=trail[i], fade=1-i/trail.length;
-          pts[count*4]=t.x; pts[count*4+1]=t.y; pts[count*4+2]=26*fade+6; pts[count*4+3]=1;
-          vels[count*2]=t.vx||0; vels[count*2+1]=t.vy||0; count++; }
-        gl.clearColor(0,0,0,0); gl.clear(gl.COLOR_BUFFER_BIT);
-        gl.uniform2f(uRes, canvas.width, canvas.height); gl.uniform1f(uDpr, dpr);
-        gl.uniform4fv(uPts, pts); gl.uniform2fv(uVel, vels); gl.uniform1i(uCount, count);
+        const dt = Math.min(0.05, (now - last) / 1000);
+        last = now;
+        
+        const targetBtn = (hoverType === 1) ? 1.0 : 0.0;
+        const targetTxt = (hoverType === 2) ? 1.0 : 0.0;
+        hoverBtnFactor += (targetBtn - hoverBtnFactor) * 12.0 * dt; 
+        hoverTxtFactor += (targetTxt - hoverTxtFactor) * 12.0 * dt; 
+        
+        const k = 1 - Math.pow(0.0005, dt); 
+        const nx = px + (mx - px) * k;
+        const ny = py + (my - py) * k;
+        vx = (nx - px) / Math.max(dt, 0.001);
+        vy = (ny - py) / Math.max(dt, 0.001);
+        px = nx; py = ny;
+        const speed = Math.hypot(vx, vy);
+
+        const maxHover = Math.max(hoverBtnFactor, hoverTxtFactor);
+        
+        if (speed > 400 && pixels.length < 40 && Math.random() > 0.3 && maxHover < 0.2) {
+            const angle = Math.atan2(vy, vx) + (Math.random() - 0.5) * 1.5; 
+            const dropSpeed = speed * (0.1 + Math.random() * 0.3);
+            pixels.push({
+                x: px, y: py,
+                vx: Math.cos(angle) * dropSpeed,
+                vy: Math.sin(angle) * dropSpeed,
+                life: 1.0, 
+                size: 2 + Math.random() * 5 
+            });
+        }
+
+        trail.push({ x: px, y: py });
+        if (trail.length > MAX_TRAIL) trail.shift();
+        for (let i=0; i<trail.length-1; i++){
+          trail[i].vx = (trail[i+1].x - trail[i].x) * 12;
+          trail[i].vy = (trail[i+1].y - trail[i].y) * 12;
+        }
+        const lastT = trail[trail.length-1];
+        if (lastT){ lastT.vx = vx * 0.008; lastT.vy = vy * 0.008; }
+
+        for (let i = pixels.length - 1; i >= 0; i--) {
+            let p = pixels[i];
+            p.life -= dt * 2.0; 
+            if (p.life <= 0) {
+                pixels.splice(i, 1);
+                continue;
+            }
+            p.x += p.vx * dt;
+            p.y += p.vy * dt;
+            p.vx *= 0.85; 
+            p.vy *= 0.85;
+        }
+
+        const baseHeadR = 18 + Math.min(10, speed * 0.01); 
+        let count = 0;
+        
+        // 1. THE MAIN CORE 
+        const headR = baseHeadR * (1 - maxHover) + 6 * maxHover;
+        pts[0] = px; pts[1] = py; pts[2] = headR * (1 - hoverTxtFactor); 
+        pts[3] = 1.0; 
+        vels[0] = vx * 0.01; vels[1] = vy * 0.01; 
+        count = 1;
+
+        // 2. TARGET LOCK (BUTTON HOVER)
+        if (hoverBtnFactor > 0.01) {
+            const spread = 24 * hoverBtnFactor; 
+            const dotR = 7 * hoverBtnFactor;    
+            const rotation = now * 0.002;    
+            for (let j = 0; j < 4; j++) {
+                const angle = rotation + (j * (Math.PI / 2)); 
+                pts[count*4] = px + Math.cos(angle) * spread; 
+                pts[count*4+1] = py + Math.sin(angle) * spread;
+                pts[count*4+2] = dotR; 
+                pts[count*4+3] = 0.0; 
+                vels[count*2] = 0; vels[count*2+1] = 0; 
+                count++;
+            }
+        }
+
+        // 3. OPTICAL ALIGNMENT CROSSHAIR (TEXT INPUT HOVER)
+        if (hoverTxtFactor > 0.01) {
+            
+            // X-Axis Laser Line
+            pts[count*4] = px; pts[count*4+1] = py; 
+            pts[count*4+2] = 2.5 * hoverTxtFactor; // Ultra-thin base
+            pts[count*4+3] = 0.0; // Square flag
+            vels[count*2] = 250 * hoverTxtFactor; // Fake Horizontal Stretch
+            vels[count*2+1] = 0; 
+            count++;
+
+            // Y-Axis Laser Line
+            pts[count*4] = px; pts[count*4+1] = py; 
+            pts[count*4+2] = 2.5 * hoverTxtFactor; // Ultra-thin base
+            pts[count*4+3] = 0.0; // Square flag
+            vels[count*2] = 0; 
+            vels[count*2+1] = 250 * hoverTxtFactor; // Fake Vertical Stretch
+            count++;
+
+            // 4 Corner Alignment Nodes (Creates a framing box)
+            const spread = 16 * hoverTxtFactor; 
+            const pulse = 0.6 + 0.4 * Math.sin(now * 0.01); 
+            const nodeR = 4 * hoverTxtFactor * pulse;
+            
+            const offsets = [[-1, -1], [1, -1], [-1, 1], [1, 1]];
+            for (let j = 0; j < 4; j++) {
+                pts[count*4] = px + offsets[j][0] * spread; 
+                pts[count*4+1] = py + offsets[j][1] * spread;
+                pts[count*4+2] = nodeR; 
+                pts[count*4+3] = 0.0; // Square flag
+                vels[count*2] = 0; vels[count*2+1] = 0;
+                count++;
+            }
+        }
+
+        // 4. THE DATA CABLE TRAIL
+        const trailFade = 1.0 - maxHover;
+        for (let i=0; i<trail.length && count < MAX_POINTS; i++){
+          const t = trail[i];
+          const fade = 1.0 - i / trail.length;
+          pts[count*4] = t.x; pts[count*4+1] = t.y;
+          pts[count*4+2] = (baseHeadR * 0.6) * Math.pow(fade, 2.0) * trailFade; 
+          pts[count*4+3] = 1.0; 
+          vels[count*2] = t.vx || 0; vels[count*2+1] = t.vy || 0;
+          count++;
+        }
+
+        // 5. THE SHED PIXELS
+        for (let i=0; i<pixels.length && count < MAX_POINTS; i++) {
+            const p = pixels[i];
+            pts[count*4] = p.x; pts[count*4+1] = p.y;
+            pts[count*4+2] = p.size * Math.pow(p.life, 0.5); 
+            pts[count*4+3] = 0.0; 
+            vels[count*2] = p.vx * 0.015; vels[count*2+1] = p.vy * 0.015;
+            count++;
+        }
+
+        gl.clearColor(0,0,0,0);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        gl.uniform2f(uRes, canvas.width, canvas.height);
+        gl.uniform1f(uDpr, dpr);
+        gl.uniform4fv(uPts, pts);
+        gl.uniform2fv(uVel, vels);
+        gl.uniform1i(uCount, count);
         gl.drawArrays(gl.TRIANGLES, 0, 6);
         requestAnimationFrame(frame);
       }
       requestAnimationFrame(frame);
     })();
-
-    /* ========== FORM SWITCHING (animated) ========== */
-    function swapForms(fromEl, toEl, urlMode){
-      if (fromEl.classList.contains('leaving')) return;
-      fromEl.classList.add('leaving');
-      setTimeout(() => {
-        fromEl.classList.add('hidden');
-        fromEl.classList.remove('leaving');
-        toEl.classList.remove('hidden');
-        toEl.classList.add('entering');
-        void toEl.offsetWidth;
-        toEl.classList.remove('entering');
-        history.replaceState(null, '', 'auth.html?mode=' + urlMode);
-      }, 380);
-    }
-
-    document.getElementById('goto-signup').addEventListener('click', (e) => {
-      e.preventDefault();
-      document.getElementById('login-error').classList.remove('show');
-      swapForms(loginForm, signupForm, 'signup');
-    });
-    document.getElementById('goto-login').addEventListener('click', (e) => {
-      e.preventDefault();
-      document.getElementById('signup-error').classList.remove('show');
-      swapForms(signupForm, loginForm, 'login');
-    });
 
     /* ========== AUTH ACTIONS ========== */
     document.getElementById('login-btn').addEventListener('click', () => {
