@@ -1151,7 +1151,7 @@ function animateTo(id, target, raw){
   })();
 
   /* LIQUID CURSOR — additive metaball WebGL shader */
-    (function initFuturisticHoverCursor(){
+    (function initSubtleMetroCursor(){
       const canvas = document.getElementById('fluid-canvas');
       const gl = canvas.getContext('webgl', { premultipliedAlpha:false, antialias:false, alpha:true });
       if (!gl){ canvas.style.display = 'none'; return; }
@@ -1179,22 +1179,37 @@ function animateTo(id, target, raw){
 
         'float field(vec2 p, vec4 pt, vec2 vel){',
         '  vec2 d = p - pt.xy;',
-        '  float sp = length(vel);',
         
-        // pt.w > 0.5 means it's a fluid/aerodynamic blob
-        '  if (sp > 0.5 && pt.w > 0.5){',
+        // --- HOLLOW DIAMOND (Buttons - Rotated 45deg) pt.w = 3.0 ---
+        '  if (pt.w > 2.5) {',
+        '    float boxDist = (abs(d.x) + abs(d.y)) * 0.7071;', 
+        '    float thick = abs(boxDist - pt.z);',
+        '    float distSq = thick * thick * 1.5;',
+        '    return 3.0 / (distSq + 1.0);',
+        '  }',
+
+        // --- HOLLOW RING (3D Model) pt.w = 2.0 ---
+        '  if (pt.w > 1.5) {',
+        '    float distFromCenter = length(d);',
+        '    float ringThickness = abs(distFromCenter - pt.z);',
+        '    float ringDistSq = ringThickness * ringThickness * 1.5;',
+        '    return 3.0 / (ringDistSq + 1.0);', 
+        '  }',
+
+        // --- STANDARD SHAPES (Fluid/Rounded & Sharp Square) ---
+        '  float sp = length(vel);',
+        '  if (sp > 0.5){',
         '    vec2 dir = vel / sp;',
         '    float along = dot(d, dir);',
-        '    float stretch = 1.0 + clamp(sp * 0.02, 0.0, 3.0);',
+        '    float stretch = 1.0 + clamp(sp * 0.015, 0.0, 40.0);', 
         '    d -= dir * along * (1.0 - 1.0/stretch);',
         '  }',
         
         '  float distSq = dot(d,d);',
         
-        // pt.w < 0.5 means it's a rigid, digital SQUARE (used for pixels and the reticle)
+        // Solid Sharp Square pt.w = 0.0
         '  if (pt.w < 0.5) {',
         '    float boxDist = max(abs(d.x), abs(d.y));',
-        // Sharpen the falloff for squares so they don't melt as easily
         '    distSq = boxDist * boxDist * 1.8;',
         '  }',
         
@@ -1212,7 +1227,6 @@ function animateTo(id, target, raw){
         '    f += field(px, u_points[i], u_vel[i]);',
         '  }',
 
-        // High contrast threshold for a crisp, glowing-edge look
         '  float paint = smoothstep(0.85, 0.95, f);',
         '  if (paint < 0.01) discard;',
         '  gl_FragColor = vec4(1.0, 1.0, 1.0, paint);',
@@ -1258,19 +1272,29 @@ function animateTo(id, target, raw){
       const pts = new Float32Array(MAX_POINTS * 4);
       const vels = new Float32Array(MAX_POINTS * 2);
 
-      // --- DOM HOVER DETECTION ---
-      let isHovering = false;
-      let hoverFactor = 0; 
+      let hoverType = 0; 
+      let hoverBtnFactor = 0; 
+      let hoverTxtFactor = 0;
+      let hover3dFactor = 0;
+      let isDragging3D = false;
+      let drag3dFactor = 0;
       
       window.addEventListener('pointermove', e => { mx = e.clientX; my = e.clientY; });
       
       window.addEventListener('mouseover', e => {
-        if (e.target.closest('button, a, input, [role="button"]')) {
-            isHovering = true;
+        if (e.target.closest('[data-cursor="3d"], canvas')) {
+            hoverType = 3;
+        } else if (e.target.closest('input[type="text"], input[type="email"], input[type="password"], textarea, [contenteditable="true"]')) {
+            hoverType = 2;
+        } else if (e.target.closest('button, a, input[type="submit"], [role="button"]')) {
+            hoverType = 1;
         } else {
-            isHovering = false;
+            hoverType = 0;
         }
       });
+
+      window.addEventListener('mousedown', () => { if (hoverType === 3) isDragging3D = true; });
+      window.addEventListener('mouseup', () => { isDragging3D = false; });
 
       let last = performance.now();
       
@@ -1278,10 +1302,12 @@ function animateTo(id, target, raw){
         const dt = Math.min(0.05, (now - last) / 1000);
         last = now;
         
-        const targetHover = isHovering ? 1.0 : 0.0;
-        hoverFactor += (targetHover - hoverFactor) * 12.0 * dt; 
+        hoverBtnFactor += ((hoverType === 1 ? 1.0 : 0.0) - hoverBtnFactor) * 12.0 * dt; 
+        hoverTxtFactor += ((hoverType === 2 ? 1.0 : 0.0) - hoverTxtFactor) * 12.0 * dt; 
+        hover3dFactor  += ((hoverType === 3 ? 1.0 : 0.0) - hover3dFactor) * 12.0 * dt; 
+        drag3dFactor   += ((isDragging3D && hoverType === 3 ? 1.0 : 0.0) - drag3dFactor) * 15.0 * dt;
         
-        const k = 1 - Math.pow(0.0005, dt); // Snappy robotic tracking
+        const k = 1 - Math.pow(0.0005, dt); 
         const nx = px + (mx - px) * k;
         const ny = py + (my - py) * k;
         vx = (nx - px) / Math.max(dt, 0.001);
@@ -1289,17 +1315,12 @@ function animateTo(id, target, raw){
         px = nx; py = ny;
         const speed = Math.hypot(vx, vy);
 
-        // PIXEL SHEDDING (Disabled slightly while hovering to keep the lock-on clean)
-        if (speed > 400 && pixels.length < 40 && Math.random() > 0.3 && hoverFactor < 0.2) {
+        const maxHover = Math.max(hoverBtnFactor, hoverTxtFactor, hover3dFactor);
+        
+        if (speed > 400 && pixels.length < 40 && Math.random() > 0.3 && maxHover < 0.2) {
             const angle = Math.atan2(vy, vx) + (Math.random() - 0.5) * 1.5; 
             const dropSpeed = speed * (0.1 + Math.random() * 0.3);
-            pixels.push({
-                x: px, y: py,
-                vx: Math.cos(angle) * dropSpeed,
-                vy: Math.sin(angle) * dropSpeed,
-                life: 1.0, 
-                size: 2 + Math.random() * 5 
-            });
+            pixels.push({ x: px, y: py, vx: Math.cos(angle) * dropSpeed, vy: Math.sin(angle) * dropSpeed, life: 1.0, size: 2 + Math.random() * 4 });
         }
 
         trail.push({ x: px, y: py });
@@ -1312,67 +1333,99 @@ function animateTo(id, target, raw){
         if (lastT){ lastT.vx = vx * 0.008; lastT.vy = vy * 0.008; }
 
         for (let i = pixels.length - 1; i >= 0; i--) {
-            let p = pixels[i];
-            p.life -= dt * 2.0; 
-            if (p.life <= 0) {
-                pixels.splice(i, 1);
-                continue;
-            }
-            p.x += p.vx * dt;
-            p.y += p.vy * dt;
-            p.vx *= 0.85; 
-            p.vy *= 0.85;
+            let p = pixels[i]; p.life -= dt * 2.0; 
+            if (p.life <= 0) { pixels.splice(i, 1); continue; }
+            p.x += p.vx * dt; p.y += p.vy * dt; p.vx *= 0.85; p.vy *= 0.85;
         }
 
         const baseHeadR = 18 + Math.min(10, speed * 0.01); 
         let count = 0;
         
-        // 1. THE MAIN CORE (Shrinks down into a precise dot when hovering)
-        const headR = baseHeadR * (1 - hoverFactor) + 6 * hoverFactor;
-        pts[0] = px; pts[1] = py; pts[2] = headR; 
-        pts[3] = 1.0; // Blob flag
+        // 1. THE MAIN CORE (Fades out for text/3D)
+        const headR = baseHeadR * (1 - maxHover) + 4 * hoverBtnFactor; 
+        pts[0] = px; pts[1] = py; pts[2] = headR * (1 - hoverTxtFactor) * (1 - hover3dFactor); 
+        pts[3] = 1.0; 
         vels[0] = vx * 0.01; vels[1] = vy * 0.01; 
         count = 1;
 
-        // 2. THE TARGET LOCK RETICLE (Deploys 4 rotating squares)
-        if (hoverFactor > 0.01) {
-            const spread = 24 * hoverFactor; // Radius of the lock-on ring
-            const dotR = 7 * hoverFactor;    // Size of the bracket squares
-            const rotation = now * 0.002;    // Slow mechanical rotation
+        // 2. SUBTLE BUTTON HOVER: Rotated 45-degree Diamond Box
+        if (hoverBtnFactor > 0.01) {
+            pts[count*4] = px; pts[count*4+1] = py;
+            pts[count*4+2] = 12 * hoverBtnFactor; 
+            pts[count*4+3] = 3.0; // Hollow Diamond flag
+            vels[count*2] = 0; vels[count*2+1] = 0;
+            count++;
+        }
+
+        // 3. TEXT HOVER: Proper Size Rounded I-Beam
+        if (hoverTxtFactor > 0.01) {
             
-            for (let j = 0; j < 4; j++) {
-                const angle = rotation + (j * (Math.PI / 2)); // Space 4 points at 90 degrees
-                pts[count*4] = px + Math.cos(angle) * spread; 
-                pts[count*4+1] = py + Math.sin(angle) * spread;
-                pts[count*4+2] = dotR; 
-                // Flag 0.0 forces the shader to render these as sharp geometric squares
-                pts[count*4+3] = 0.0; 
-                vels[count*2] = 0; vels[count*2+1] = 0; // No velocity stretch for HUD elements
+            // Vertical Stem
+            pts[count*4] = px; pts[count*4+1] = py;
+            pts[count*4+2] = 1.8 * hoverTxtFactor; 
+            pts[count*4+3] = 1.0; // Fluid/Rounded flag
+            vels[count*2] = 0; 
+            vels[count*2+1] = 200 * hoverTxtFactor; 
+            count++;
+
+            // Top Serif
+            pts[count*4] = px; pts[count*4+1] = py - 10 * hoverTxtFactor;
+            pts[count*4+2] = 1.8 * hoverTxtFactor; 
+            pts[count*4+3] = 1.0; 
+            vels[count*2] = 100 * hoverTxtFactor; 
+            vels[count*2+1] = 0; 
+            count++;
+
+            // Bottom Serif
+            pts[count*4] = px; pts[count*4+1] = py + 10 * hoverTxtFactor;
+            pts[count*4+2] = 1.8 * hoverTxtFactor; 
+            pts[count*4+3] = 1.0; 
+            vels[count*2] = 100 * hoverTxtFactor; 
+            vels[count*2+1] = 0; 
+            count++;
+        }
+
+        // 4. GYROSCOPIC AXIS LOCK (3D MODEL)
+        if (hover3dFactor > 0.01) {
+            // Smaller Hollow Ring
+            pts[count*4] = px; pts[count*4+1] = py;
+            pts[count*4+2] = 16 * hover3dFactor; // Shrunk from 24 to 16
+            pts[count*4+3] = 2.0; // Hollow Ring
+            vels[count*2] = 0; vels[count*2+1] = 0;
+            count++;
+
+            // Center Pivot Dot
+            pts[count*4] = px; pts[count*4+1] = py;
+            pts[count*4+2] = 2.5 * hover3dFactor; // Slightly smaller dot for precision
+            pts[count*4+3] = 0.0;
+            vels[count*2] = 0; vels[count*2+1] = 0;
+            count++;
+
+            // The Dynamic Rotation Axis (When Dragging)
+            if (drag3dFactor > 0.01 && speed > 5) {
+                const axisAngle = Math.atan2(vy, vx) + Math.PI / 2;
+                pts[count*4] = px; pts[count*4+1] = py;
+                pts[count*4+2] = 1.5 * drag3dFactor; pts[count*4+3] = 0.0;
+                vels[count*2] = Math.cos(axisAngle) * 350 * drag3dFactor; 
+                vels[count*2+1] = Math.sin(axisAngle) * 350 * drag3dFactor;
                 count++;
             }
         }
 
-        // 3. THE DATA CABLE TRAIL (Retracts/fades out seamlessly when locking on)
-        const trailFade = 1.0 - hoverFactor;
+        // 5. THE DATA CABLE TRAIL
+        const trailFade = 1.0 - maxHover;
         for (let i=0; i<trail.length && count < MAX_POINTS; i++){
-          const t = trail[i];
-          const fade = 1.0 - i / trail.length;
+          const t = trail[i]; const fade = 1.0 - i / trail.length;
           pts[count*4] = t.x; pts[count*4+1] = t.y;
-          pts[count*4+2] = (baseHeadR * 0.6) * Math.pow(fade, 2.0) * trailFade; 
-          pts[count*4+3] = 1.0; 
-          vels[count*2] = t.vx || 0; vels[count*2+1] = t.vy || 0;
-          count++;
+          pts[count*4+2] = (baseHeadR * 0.6) * Math.pow(fade, 2.0) * trailFade; pts[count*4+3] = 1.0; 
+          vels[count*2] = t.vx || 0; vels[count*2+1] = t.vy || 0; count++;
         }
 
-        // 4. THE SHED PIXELS (Rendered as squares)
+        // 6. THE SHED PIXELS
         for (let i=0; i<pixels.length && count < MAX_POINTS; i++) {
-            const p = pixels[i];
-            pts[count*4] = p.x; pts[count*4+1] = p.y;
-            pts[count*4+2] = p.size * Math.pow(p.life, 0.5); 
-            pts[count*4+3] = 0.0; // Square flag
-            // Stretch the pixels slightly based on velocity to look like motion-blurred data
-            vels[count*2] = p.vx * 0.015; vels[count*2+1] = p.vy * 0.015;
-            count++;
+            const p = pixels[i]; pts[count*4] = p.x; pts[count*4+1] = p.y;
+            pts[count*4+2] = p.size * Math.pow(p.life, 0.5); pts[count*4+3] = 0.0; 
+            vels[count*2] = p.vx * 0.015; vels[count*2+1] = p.vy * 0.015; count++;
         }
 
         gl.clearColor(0,0,0,0);

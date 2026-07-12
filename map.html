@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Metro Nexus — Map</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0a0a0b; --ink-2:#141416; --ink-3:#1b1b1e;
+    --steel:#8a8d91; --mist:#c4c6c9; --paper:#f5f5f4;
+    --hair:rgba(255,255,255,0.08); --hair-strong:rgba(255,255,255,0.16);
+    --display:"Bricolage Grotesque", sans-serif;
+    --ease:cubic-bezier(.16,.8,.24,1);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html,body{background:var(--ink);color:var(--paper);font-family:var(--display);-webkit-font-smoothing:antialiased;min-height:100vh;}
+  body{background:linear-gradient(to bottom,rgba(255,255,255,0.08),rgba(255,255,255,0)),var(--ink);overflow-x:hidden;cursor:none;position:relative;}
+  a,button,input,select{cursor:none;}
+  ::selection{background:var(--paper);color:var(--ink);}
+  #fluid-canvas{position:fixed;inset:0;width:100vw;height:100vh;z-index:9000;pointer-events:none;mix-blend-mode:difference;}
+
+  .topbar{position:fixed;top:0;left:0;right:0;z-index:80;display:flex;align-items:center;justify-content:space-between;padding:22px clamp(24px,6vw,64px);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px) saturate(140%);border-bottom:1px solid var(--hair);background:rgba(10,10,11,0.4);}
+  .brand{font-family:var(--display);font-weight:500;font-size:15px;letter-spacing:0.32em;text-decoration:none;color:var(--paper);text-transform:uppercase;}
+  .nav-cluster{display:flex;align-items:center;gap:36px;}
+  .nav-links{display:flex;align-items:center;gap:32px;}
+  .nav-link{font-family:var(--display);font-size:12px;letter-spacing:0.24em;text-transform:uppercase;color:var(--steel);text-decoration:none;transition:color .3s var(--ease);position:relative;padding:4px 0;}
+  .nav-link:hover{color:var(--paper);}
+  .nav-link.active{color:var(--paper);}
+  .nav-link.active::before{content:'';position:absolute;bottom:-6px;left:0;right:0;height:1px;background:var(--paper);}
+  .logout-btn{background:none;border:none;color:var(--steel);padding:4px 0;font-family:var(--display);font-size:12px;letter-spacing:0.24em;text-transform:uppercase;transition:color .3s var(--ease);}
+  .logout-btn:hover{color:var(--paper);}
+  .nav-toggle{display:none;background:none;border:1px solid var(--hair);color:var(--paper);padding:8px 12px;border-radius:6px;}
+
+  main{position:relative;z-index:5;max-width:1440px;margin:0 auto;padding:140px clamp(24px,6vw,64px) 120px;}
+  .reveal{opacity:0;transform:translateY(16px);animation:reveal .8s var(--ease) forwards;}
+  @keyframes reveal{to{opacity:1;transform:none;}}
+
+  .hero{margin-bottom:44px;}
+  .eyebrow{font-family:var(--display);font-size:30px;color:var(--steel);display:block;line-height:1;font-weight:300;}
+  .hero h1{font-family:var(--display);font-weight:400;font-size:clamp(30px,5vw,50px);letter-spacing:-0.015em;margin-top:10px;}
+  .hero p{font-weight:300;font-size:15px;color:var(--steel);margin-top:14px;max-width:560px;}
+
+  .toolbar{display:flex;align-items:center;gap:18px;padding:18px 22px;border:1px solid var(--hair);border-radius:2px;background:rgba(20,20,22,0.4);margin-bottom:22px;flex-wrap:wrap;}
+  .tb-group{display:flex;flex-direction:column;gap:6px;}
+  .tb-label{font-size:10px;letter-spacing:0.28em;text-transform:uppercase;color:var(--steel);}
+  .tb-chip{display:flex;align-items:center;gap:12px;padding:10px 16px;border:1px solid var(--hair);border-radius:2px;transition:border-color .3s var(--ease),background .3s var(--ease);min-width:200px;}
+  .tb-chip:hover{border-color:var(--hair-strong);}
+  .tb-chip.active{border-color:var(--paper);background:rgba(245,245,244,0.04);}
+  .tb-code{font-size:11px;letter-spacing:0.22em;color:var(--steel);}
+  .tb-name{font-size:14px;color:var(--paper);letter-spacing:0.02em;}
+  .tb-swap{align-self:flex-end;background:transparent;border:1px solid var(--hair);color:var(--steel);padding:12px;border-radius:2px;transition:all .3s var(--ease);}
+  .tb-swap:hover{color:var(--paper);border-color:var(--paper);}
+  .tb-spacer{flex:1;}
+  .tb-metric{display:flex;flex-direction:column;gap:6px;padding:6px 18px;border-left:1px solid var(--hair);}
+  .tb-metric-label{font-size:10px;letter-spacing:0.28em;text-transform:uppercase;color:var(--steel);}
+  .tb-metric-val{font-size:20px;color:var(--paper);letter-spacing:0.02em;}
+
+  .viewport{position:relative;height:640px;border:1px solid var(--hair);border-radius:2px;overflow:hidden;background:radial-gradient(ellipse at 50% 50%,rgba(245,245,244,0.04),transparent 60%),var(--ink-2);margin-bottom:32px;}
+  .grid-bg{position:absolute;inset:0;background-image:linear-gradient(to right,rgba(255,255,255,0.035) 1px,transparent 1px),linear-gradient(to bottom,rgba(255,255,255,0.035) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;}
+  .corner{position:absolute;font-size:10px;letter-spacing:0.28em;text-transform:uppercase;color:var(--steel);padding:14px 18px;pointer-events:none;}
+  .corner.tl{top:0;left:0;} .corner.tr{top:0;right:0;} .corner.bl{bottom:0;left:0;} .corner.br{bottom:0;right:0;}
+  #map-svg{width:100%;height:100%;display:block;transform-origin:center;transition:transform .3s var(--ease);}
+
+  .ring-guide{fill:none;stroke:rgba(255,255,255,0.06);stroke-width:1;stroke-dasharray:1 6;}
+  .spoke{fill:none;stroke:rgba(245,245,244,0.14);stroke-width:2;stroke-linecap:round;transition:stroke .4s var(--ease);}
+  .spoke-dash{fill:none;stroke:rgba(245,245,244,0.28);stroke-width:1;stroke-dasharray:2 8;stroke-linecap:round;animation:dash 20s linear infinite;}
+  @keyframes dash{to{stroke-dashoffset:-200;}}
+  .spoke-active{stroke:var(--paper);stroke-width:2;filter:url(#glow);animation:pulse 3s var(--ease) infinite;}
+  @keyframes pulse{0%,100%{opacity:0.9;}50%{opacity:1;}}
+
+  .station-node{cursor:none;}
+  .node-outer{fill:var(--ink-2);stroke:var(--steel);stroke-width:1;transition:stroke .3s var(--ease),fill .3s var(--ease);}
+  .node-inner{fill:var(--steel);transition:fill .3s var(--ease);}
+  .node-tick{stroke:var(--steel);stroke-width:1;opacity:0.5;transition:opacity .3s var(--ease),stroke .3s var(--ease);}
+  .node-code{font-family:var(--display);font-size:10px;letter-spacing:0.24em;fill:var(--steel);transition:fill .3s var(--ease);}
+  .node-name{font-family:var(--display);font-size:11px;letter-spacing:0.16em;fill:var(--paper);}
+  .station-node.hover .node-outer,.station-node.active .node-outer{stroke:var(--paper);fill:var(--ink-3);}
+  .station-node.hover .node-inner,.station-node.active .node-inner{fill:var(--paper);}
+  .station-node.hover .node-tick,.station-node.active .node-tick{opacity:1;stroke:var(--paper);}
+  .station-node.hover .node-code,.station-node.active .node-code{fill:var(--paper);}
+  .station-node.hub .node-outer{stroke-width:1.5;}
+  .pulse-ring{fill:none;stroke:var(--paper);stroke-width:1;opacity:0.6;transform-origin:center;transform-box:fill-box;animation:pulseRing 2.2s var(--ease) infinite;}
+  @keyframes pulseRing{0%{transform:scale(0.6);opacity:0.7;}100%{transform:scale(1.6);opacity:0;}}
+  .hub-aura{transform-origin:center;transform-box:fill-box;animation:hubAura 4s ease infinite;}
+  @keyframes hubAura{0%,100%{opacity:0.45;}50%{opacity:0.7;}}
+
+  .station-info{position:absolute;top:20px;left:50%;transform:translateX(-50%);min-width:260px;padding:18px 22px;background:rgba(20,20,22,0.9);border:1px solid var(--hair-strong);border-radius:2px;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);pointer-events:none;animation:fadeIn .25s var(--ease) forwards;}
+  @keyframes fadeIn{from{opacity:0;transform:translate(-50%,-6px);}to{opacity:1;transform:translate(-50%,0);}}
+  .si-code{font-size:10px;letter-spacing:0.28em;color:var(--steel);}
+  .si-name{font-size:20px;color:var(--paper);margin-top:4px;letter-spacing:-0.005em;}
+  .si-zone{font-weight:300;font-size:12px;color:var(--mist);margin-top:4px;letter-spacing:0.04em;}
+  .si-divider{height:1px;background:var(--hair);margin:12px 0;}
+  .si-row{display:flex;justify-content:space-between;font-weight:300;font-size:12px;color:var(--steel);padding:4px 0;letter-spacing:0.04em;}
+  .si-row span:last-child{color:var(--paper);letter-spacing:0.06em;}
+  .si-live{color:var(--paper);position:relative;padding-left:14px;}
+  .si-live::before{content:"";position:absolute;left:0;top:50%;transform:translateY(-50%);width:6px;height:6px;border-radius:50%;background:var(--paper);animation:livePulse 1.6s ease infinite;}
+  @keyframes livePulse{0%,100%{opacity:1;}50%{opacity:0.35;}}
+
+  .controls{position:absolute;bottom:22px;right:22px;display:flex;gap:8px;z-index:4;}
+  .mc-btn{background:rgba(20,20,22,0.7);border:1px solid var(--hair-strong);color:var(--paper);width:38px;height:38px;border-radius:2px;font-family:var(--display);font-size:16px;transition:all .3s var(--ease);backdrop-filter:blur(10px);}
+  .mc-btn:hover{background:var(--paper);color:var(--ink);border-color:var(--paper);}
+  .mc-reset{width:auto;padding:0 14px;font-size:10px;letter-spacing:0.24em;text-transform:uppercase;}
+
+  .legend-row{display:grid;grid-template-columns:1fr 1fr 1.4fr;gap:24px;}
+  .legend-card{padding:26px 24px;border:1px solid var(--hair);border-radius:2px;transition:border-color .4s var(--ease);}
+  .legend-card:hover{border-color:var(--hair-strong);}
+  .lc-head{font-size:11px;letter-spacing:0.28em;text-transform:uppercase;color:var(--steel);padding-bottom:16px;border-bottom:1px solid var(--hair);margin-bottom:16px;}
+  .lc-item{display:flex;align-items:center;gap:12px;font-weight:300;font-size:13px;color:var(--mist);padding:8px 0;letter-spacing:0.02em;}
+  .lc-mark{width:18px;height:10px;display:block;}
+  .lc-line{background:rgba(245,245,244,0.3);height:1px;}
+  .lc-active{background:var(--paper);height:2px;}
+  .lc-hub{width:12px;height:12px;border-radius:50%;background:transparent;border:1.5px solid var(--paper);}
+  .lc-node{width:10px;height:10px;border-radius:50%;background:var(--ink-3);border:1px solid var(--steel);}
+
+  .js-row{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--hair);font-weight:300;font-size:13px;letter-spacing:0.03em;}
+  .js-row:last-child{border-bottom:none;}
+  .js-k{color:var(--steel);} .js-v{color:var(--paper);letter-spacing:0.04em;}
+  .js-total .js-k{color:var(--paper);} .js-total .js-v{font-size:18px;}
+
+  .station-index{display:flex;flex-direction:column;}
+  .idx-item{display:grid;grid-template-columns:40px 1fr auto;align-items:center;gap:14px;padding:10px 6px;border-bottom:1px solid var(--hair);transition:background .3s var(--ease);}
+  .idx-item:last-child{border-bottom:none;}
+  .idx-item:hover{background:rgba(245,245,244,0.03);}
+  .idx-item.active{background:rgba(245,245,244,0.05);}
+  .idx-num{font-size:11px;color:var(--steel);letter-spacing:0.22em;}
+  .idx-nm{font-weight:300;font-size:13px;color:var(--paper);letter-spacing:0.02em;}
+  .idx-cd{font-size:10px;color:var(--steel);letter-spacing:0.22em;}
+
+  @media(max-width:820px){.nav-links{display:none;}.nav-toggle{display:block;}.nav-cluster{gap:16px;}}
+  @media(max-width:980px){.legend-row{grid-template-columns:1fr;}.viewport{height:520px;}.tb-metric{border-left:none;padding:6px 0;}}
+  @media(max-width:520px){body{cursor:auto;}#fluid-canvas{display:none;}a,button,input,select{cursor:pointer;}}
+</style>
+</head>
+<body>
+
+<canvas id="fluid-canvas"></canvas>
+
+<header class="topbar">
+  <a href="#" class="brand">METRO&nbsp;NEXUS</a>
+  <div class="nav-cluster">
+    <nav class="nav-links">
+      <a href="#" class="nav-link">Dashboard</a>
+      <a href="#" class="nav-link">The Nexus Ring</a>
+      <a href="#" class="nav-link active">Map</a>
+    </nav>
+    <button class="logout-btn">Log out</button>
+    <button class="nav-toggle">&#9776;</button>
+  </div>
+</header>
+
+<main>
+  <section class="hero reveal">
+    <span class="eyebrow">the network</span>
+    <h1>Interactive Line Map</h1>
+    <p>Six radial lines. One central hub. Every journey passes through Grand Central — fare updates in real time as you pick a route.</p>
+  </section>
+
+  <section class="toolbar reveal">
+    <div class="tb-group">
+      <span class="tb-label">Origin</span>
+      <div class="tb-chip active" id="chip-from">
+        <span class="tb-code" id="cf-code">CHR</span>
+        <span class="tb-name" id="cf-name">Chroma Junction</span>
+      </div>
+    </div>
+    <button class="tb-swap" id="btn-swap" aria-label="Swap">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M7 4L3 8l4 4"/><path d="M21 8H3"/><path d="M17 20l4-4-4-4"/><path d="M3 16h18"/>
+      </svg>
+    </button>
+    <div class="tb-group">
+      <span class="tb-label">Destination</span>
+      <div class="tb-chip" id="chip-to">
+        <span class="tb-code" id="ct-code">GCN</span>
+        <span class="tb-name" id="ct-name">Grand Central</span>
+      </div>
+    </div>
+    <div class="tb-spacer"></div>
+    <div class="tb-metric"><span class="tb-metric-label">Stops</span><span class="tb-metric-val" id="m-stops">1</span></div>
+    <div class="tb-metric"><span class="tb-metric-label">Fare</span><span class="tb-metric-val" id="m-fare">₹32</span></div>
+    <div class="tb-metric"><span class="tb-metric-label">Live</span><span class="tb-metric-val" id="m-clock">--:--</span></div>
+  </section>
+
+  <section class="viewport reveal" id="viewport">
+    <div class="grid-bg"></div>
+    <div class="corner tl">N · 01</div>
+    <div class="corner tr">METRO NEXUS · RING GRID</div>
+    <div class="corner bl">SCALE 1:24000</div>
+    <div class="corner br">HUB · GRAND CENTRAL</div>
+    <svg id="map-svg" viewBox="0 0 1560 640" preserveAspectRatio="xMidYMid meet">
+      <defs>
+        <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="3.5" result="b"/>
+          <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+        <radialGradient id="hubGrad" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="rgba(245,245,244,0.9)"/>
+          <stop offset="55%" stop-color="rgba(245,245,244,0.18)"/>
+          <stop offset="100%" stop-color="rgba(245,245,244,0)"/>
+        </radialGradient>
+      </defs>
+
+      <!-- Concentric guide rings -->
+      <g id="ring-guides">
+        <circle class="ring-guide" cx="780" cy="320" r="120"/>
+        <circle class="ring-guide" cx="780" cy="320" r="230"/>
+        <circle class="ring-guide" cx="780" cy="320" r="340"/>
+      </g>
+
+      <!-- registration ticks -->
+      <g id="reg-marks"></g>
+
+      <!-- Hub aura -->
+      <circle class="hub-aura" cx="780" cy="320" r="150" fill="url(#hubGrad)"/>
+
+      <!-- Spokes: base + dashed animation -->
+      <g id="spokes-base"></g>
+      <g id="spokes-dash"></g>
+
+      <!-- Active spokes (highlighted) -->
+      <g id="spokes-active"></g>
+
+      <!-- Stations -->
+      <g id="stations"></g>
+    </svg>
+
+    <div class="controls">
+      <button class="mc-btn" id="zoom-in">+</button>
+      <button class="mc-btn" id="zoom-out">−</button>
+      <button class="mc-btn mc-reset" id="zoom-reset">Reset</button>
+    </div>
+  </section>
+
+  <section class="legend-row reveal">
+    <div class="legend-card">
+      <div class="lc-head">Legend</div>
+      <div class="lc-item"><span class="lc-mark lc-line"></span>Radial spoke line</div>
+      <div class="lc-item"><span class="lc-mark lc-active"></span>Selected journey path</div>
+      <div class="lc-item"><span class="lc-mark lc-hub"></span>Grand Central · Hub</div>
+      <div class="lc-item"><span class="lc-mark lc-node"></span>Outer ring station</div>
+    </div>
+    <div class="legend-card">
+      <div class="lc-head">Journey Summary</div>
+      <div class="js-row"><span class="js-k">From</span><span class="js-v" id="j-from">Chroma Junction</span></div>
+      <div class="js-row"><span class="js-k">To</span><span class="js-v" id="j-to">Grand Central</span></div>
+      <div class="js-row"><span class="js-k">Route</span><span class="js-v" id="j-route">Direct</span></div>
+      <div class="js-row"><span class="js-k">Distance</span><span class="js-v" id="j-dist">1 stop</span></div>
+      <div class="js-row js-total"><span class="js-k">Total fare</span><span class="js-v" id="j-fare">₹32</span></div>
+    </div>
+    <div class="legend-card">
+      <div class="lc-head">Station Index</div>
+      <div class="station-index" id="station-index"></div>
+    </div>
+  </section>
+</main>
+
+<script>
+/* Hub-and-spoke layout: Grand Central at center, 6 stations arranged in a ring */
+const CX = 780, CY = 320, RX = 480, RY = 240;
+// angles chosen so labels distribute cleanly around the ring
+const RING = [
+  { id:"chroma",   name:"Chroma Junction",    code:"CHR", zone:"Zone 01 · North",      angle: 210 }, // top-left
+  { id:"sector7",  name:"Sector 7",           code:"SC7", zone:"Zone 03 · Industrial", angle: 270 }, // top
+  { id:"blackwood",name:"Blackwood",          code:"BKW", zone:"Zone 04 · Forest",     angle: 330 }, // top-right
+  { id:"meridian", name:"Meridian Boulevard", code:"MRD", zone:"Zone 06 · East Line",  angle:  30 }, // bottom-right
+  { id:"ariamis",  name:"Ariamis",            code:"ARM", zone:"Zone 05 · Uplands",    angle:  90 }, // bottom
+  { id:"ironport", name:"Ironport",           code:"IRP", zone:"Zone 02 · Docks",      angle: 150 }  // bottom-left
+];
+function polar(a){ const rad = a * Math.PI/180; return { x: CX + Math.cos(rad)*RX, y: CY + Math.sin(rad)*RY }; }
+RING.forEach(s => { const p = polar(s.angle); s.x = p.x; s.y = p.y; });
+
+// STATIONS array: hub first at index 0 for easy referencing
+const STATIONS = [
+  { id:"central", name:"Grand Central", code:"GCN", zone:"Zone 00 · Central Hub", x: CX, y: CY, hub:true },
+  ...RING
+];
+const HUB_IDX = 0;
+
+const TRAFFIC = ["High","Medium","Low","Medium","High","Low","Medium"];
+function trafficFor(id){ const s=id.split("").reduce((a,c)=>a+c.charCodeAt(0),0); return TRAFFIC[s%TRAFFIC.length]; }
+
+// Fare: 20 base + 12/stop. Distance is 1 if either endpoint is the hub, else 2 (through hub).
+function distanceFor(a, b){
+  if (a === b) return 0;
+  if (a === HUB_IDX || b === HUB_IDX) return 1;
+  return 2;
+}
+function fareFor(a, b){
+  const d = distanceFor(a, b);
+  return d === 0 ? 0 : 20 + d * 12;
+}
+
+let fromIdx = 1, toIdx = HUB_IDX, selecting = "from", hovered = null;
+let pan = { x:0, y:0 }, zoom = 1;
+
+const svg = document.getElementById("map-svg");
+const $stations = document.getElementById("stations");
+const $reg = document.getElementById("reg-marks");
+const $spokesBase = document.getElementById("spokes-base");
+const $spokesDash = document.getElementById("spokes-dash");
+const $spokesActive = document.getElementById("spokes-active");
+
+// registration ticks
+let rm = "";
+for(let i=0;i<15;i++) rm += `<line x1="${i*100+40}" y1="0" x2="${i*100+40}" y2="640" stroke="rgba(255,255,255,0.03)"/>`;
+for(let i=0;i<8;i++)  rm += `<line x1="0" y1="${i*80+20}" x2="1560" y2="${i*80+20}" stroke="rgba(255,255,255,0.03)"/>`;
+$reg.innerHTML = rm;
+
+// Build base spokes from hub to every outer station
+function drawSpokes(){
+  let base = "", dash = "";
+  RING.forEach(s => {
+    base += `<line class="spoke" x1="${CX}" y1="${CY}" x2="${s.x}" y2="${s.y}"/>`;
+    dash += `<line class="spoke-dash" x1="${CX}" y1="${CY}" x2="${s.x}" y2="${s.y}"/>`;
+  });
+  $spokesBase.innerHTML = base;
+  $spokesDash.innerHTML = dash;
+}
+drawSpokes();
+
+function drawActiveSpokes(){
+  let html = "";
+  const involved = new Set();
+  if (fromIdx !== toIdx){
+    if (fromIdx !== HUB_IDX) involved.add(fromIdx);
+    if (toIdx   !== HUB_IDX) involved.add(toIdx);
+  }
+  involved.forEach(i => {
+    const s = STATIONS[i];
+    html += `<line class="spoke spoke-active" x1="${CX}" y1="${CY}" x2="${s.x}" y2="${s.y}"/>`;
+  });
+  $spokesActive.innerHTML = html;
+}
+
+function labelOffset(s){
+  // push label outward from hub along the radial direction
+  if (s.hub) return { dx: 0, dy: 42 };
+  const dx = s.x - CX, dy = s.y - CY;
+  const len = Math.hypot(dx, dy) || 1;
+  const ox = (dx / len) * 44;
+  const oy = (dy / len) * 44;
+  return { dx: ox, dy: oy };
+}
+
+function renderStations(){
+  $stations.innerHTML = STATIONS.map((s, idx) => {
+    const active = (idx === fromIdx || idx === toIdx);
+    const hover  = (hovered === s.id);
+    const cls = ["station-node", s.hub?"hub":"", active?"active":"", hover?"hover":""].join(" ");
+    const off = labelOffset(s);
+    return `
+      <g class="${cls}" transform="translate(${s.x},${s.y})" data-idx="${idx}" data-id="${s.id}">
+        <circle r="30" fill="transparent"/>
+        ${active ? '<circle r="22" class="pulse-ring"/>' : ''}
+        <circle r="${s.hub?15:10}" class="node-outer"/>
+        <circle r="${s.hub?6:3.5}" class="node-inner"/>
+        <line x1="-20" y1="0" x2="-13" y2="0" class="node-tick"/>
+        <line x1="13"  y1="0" x2="20"  y2="0" class="node-tick"/>
+        <g transform="translate(${off.dx},${off.dy})">
+          <text class="node-code" text-anchor="middle" y="-4">${s.code}</text>
+          <text class="node-name" text-anchor="middle" y="10">${s.name.toUpperCase()}</text>
+        </g>
+      </g>`;
+  }).join("");
+  $stations.querySelectorAll(".station-node").forEach(g => {
+    const idx = +g.dataset.idx;
+    g.addEventListener("mouseenter", () => { hovered = g.dataset.id; renderInfo(); renderStations(); });
+    g.addEventListener("mouseleave", () => { hovered = null; renderInfo(); renderStations(); });
+    g.addEventListener("click", (e) => { e.stopPropagation(); pickStation(idx); });
+  });
+}
+
+function pickStation(idx){
+  if (selecting === "from"){ fromIdx = idx; selecting = "to"; }
+  else                    { toIdx   = idx; selecting = "from"; }
+  syncUI();
+}
+
+function syncUI(){
+  document.getElementById("chip-from").classList.toggle("active", selecting === "from");
+  document.getElementById("chip-to").classList.toggle("active", selecting === "to");
+  document.getElementById("cf-code").textContent = STATIONS[fromIdx].code;
+  document.getElementById("cf-name").textContent = STATIONS[fromIdx].name;
+  document.getElementById("ct-code").textContent = STATIONS[toIdx].code;
+  document.getElementById("ct-name").textContent = STATIONS[toIdx].name;
+
+  const dist = distanceFor(fromIdx, toIdx);
+  const fare = fareFor(fromIdx, toIdx);
+  document.getElementById("m-stops").textContent = dist;
+  document.getElementById("m-fare").textContent  = "₹" + fare;
+  document.getElementById("j-from").textContent  = STATIONS[fromIdx].name;
+  document.getElementById("j-to").textContent    = STATIONS[toIdx].name;
+  document.getElementById("j-dist").textContent  = dist + " stop" + (dist === 1 ? "" : "s");
+  document.getElementById("j-fare").textContent  = "₹" + fare;
+
+  let routeLabel;
+  if (fromIdx === toIdx) routeLabel = "—";
+  else if (fromIdx === HUB_IDX || toIdx === HUB_IDX) routeLabel = "Direct";
+  else routeLabel = "via Grand Central";
+  document.getElementById("j-route").textContent = routeLabel;
+
+  drawActiveSpokes();
+  renderStations();
+  renderIndex();
+}
+
+function renderInfo(){
+  const old = document.getElementById("station-info"); if (old) old.remove();
+  if (!hovered) return;
+  const s = STATIONS.find(x => x.id === hovered);
+  const idx = STATIONS.findIndex(x => x.id === hovered);
+  const el = document.createElement("div");
+  el.id = "station-info"; el.className = "station-info";
+  el.innerHTML = `
+    <div class="si-code">${s.code}</div>
+    <div class="si-name">${s.name}</div>
+    <div class="si-zone">${s.zone}</div>
+    <div class="si-divider"></div>
+    <div class="si-row"><span>Traffic</span><span>${trafficFor(s.id)}</span></div>
+    <div class="si-row"><span>Index</span><span>${String(idx + 1).padStart(2,"0")} / 07</span></div>
+    <div class="si-row"><span>Status</span><span class="si-live">Operational</span></div>`;
+  document.getElementById("viewport").appendChild(el);
+}
+
+function renderIndex(){
+  const wrap = document.getElementById("station-index");
+  wrap.innerHTML = STATIONS.map((s, i) => {
+    const active = (i === fromIdx || i === toIdx) ? "active" : "";
+    return `<div class="idx-item ${active}" data-idx="${i}">
+      <span class="idx-num">${String(i + 1).padStart(2,"0")}</span>
+      <span class="idx-nm">${s.name}${s.hub ? " · Hub" : ""}</span>
+      <span class="idx-cd">${s.code}</span>
+    </div>`;
+  }).join("");
+  wrap.querySelectorAll(".idx-item").forEach(it => it.addEventListener("click", () => pickStation(+it.dataset.idx)));
+}
+
+document.getElementById("chip-from").addEventListener("click", () => { selecting = "from"; syncUI(); });
+document.getElementById("chip-to").addEventListener("click",   () => { selecting = "to";   syncUI(); });
+document.getElementById("btn-swap").addEventListener("click",  () => { const t = fromIdx; fromIdx = toIdx; toIdx = t; syncUI(); });
+
+/* Zoom + pan */
+function applyTransform(){ svg.style.transform = `translate(${pan.x}px,${pan.y}px) scale(${zoom})`; }
+document.getElementById("zoom-in").addEventListener("click",   () => { zoom = Math.min(1.8, +(zoom + 0.15).toFixed(2)); applyTransform(); });
+document.getElementById("zoom-out").addEventListener("click",  () => { zoom = Math.max(0.6, +(zoom - 0.15).toFixed(2)); applyTransform(); });
+document.getElementById("zoom-reset").addEventListener("click",() => { zoom = 1; pan = { x:0, y:0 }; applyTransform(); });
+
+let drag = null;
+document.getElementById("viewport").addEventListener("mousedown", (e) => {
+  if (e.target.closest(".station-node") || e.target.closest(".controls")) return;
+  drag = { sx: e.clientX, sy: e.clientY, px: pan.x, py: pan.y };
+});
+window.addEventListener("mousemove", (e) => {
+  if (!drag) return;
+  pan = { x: drag.px + (e.clientX - drag.sx), y: drag.py + (e.clientY - drag.sy) };
+  applyTransform();
+});
+window.addEventListener("mouseup", () => { drag = null; });
+
+/* Live clock */
+setInterval(() => {
+  document.getElementById("m-clock").textContent = new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
+}, 1000);
+
+renderStations();
+renderIndex();
+syncUI();
+
+/* ============ METAL CLICK SOUND ============ */
+(function initMetalClick(){
+  let ctx=null,reverbSend=null,dryBus=null;
+  function buildImpulse(ac,d=2.4,dc=3.2){const rate=ac.sampleRate,len=Math.floor(rate*d),buf=ac.createBuffer(2,len,rate);
+    for(let c=0;c<2;c++){const ch=buf.getChannelData(c);for(let i=0;i<len;i++){const t=i/len;ch[i]=(Math.random()*2-1)*Math.pow(1-t,dc);}}return buf;}
+  function ensureCtx(){if(!ctx){const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return null;ctx=new AC();
+    dryBus=ctx.createGain();dryBus.gain.value=0.75;reverbSend=ctx.createGain();reverbSend.gain.value=0.55;
+    const rev=ctx.createConvolver();rev.buffer=buildImpulse(ctx,2.4,3.2);
+    const wt=ctx.createBiquadFilter();wt.type="highshelf";wt.frequency.value=3500;wt.gain.value=4;
+    const wg=ctx.createGain();wg.gain.value=0.85;
+    reverbSend.connect(rev).connect(wt).connect(wg).connect(ctx.destination);dryBus.connect(ctx.destination);}
+    if(ctx.state==="suspended")ctx.resume();return ctx;}
+  function playClick(){const ac=ensureCtx();if(!ac)return;const now=ac.currentTime;
+    const master=ac.createGain();master.gain.value=0.14;
+    const hp=ac.createBiquadFilter();hp.type="highpass";hp.frequency.value=900;
+    master.connect(hp);hp.connect(dryBus);hp.connect(reverbSend);
+    const base=2100+Math.random()*260;
+    [1.0,1.51,2.13,2.84,3.77].forEach((r,i)=>{const o=ac.createOscillator();o.type="square";o.frequency.value=base*r;
+      const g=ac.createGain();const pk=0.22/(i+1);
+      g.gain.setValueAtTime(0.0001,now);g.gain.exponentialRampToValueAtTime(pk,now+0.002);
+      g.gain.exponentialRampToValueAtTime(0.0001,now+0.09+i*0.01);o.connect(g).connect(master);o.start(now);o.stop(now+0.12);});
+    const bs=Math.floor(ac.sampleRate*0.03),nb=ac.createBuffer(1,bs,ac.sampleRate),d=nb.getChannelData(0);
+    for(let i=0;i<bs;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/bs,2.5);
+    const n=ac.createBufferSource();n.buffer=nb;const nf=ac.createBiquadFilter();nf.type="bandpass";nf.frequency.value=5200;nf.Q.value=1.2;
+    const ng=ac.createGain();ng.gain.value=0.35;n.connect(nf).connect(ng).connect(master);n.start(now);n.stop(now+0.05);}
+  let last=0;window.addEventListener("pointerdown",()=>{const t=performance.now();if(t-last<40)return;last=t;playClick();},{passive:true,capture:true});
+})();
+
+/* ============ LIQUID CURSOR ============ */
+(function initSubtleMetroCursor(){
+      const canvas = document.getElementById('fluid-canvas');
+      const gl = canvas.getContext('webgl', { premultipliedAlpha:false, antialias:false, alpha:true });
+      if (!gl){ canvas.style.display = 'none'; return; }
+
+      const MAX_POINTS = 80; 
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+      function resize(){
+        canvas.width  = Math.floor(window.innerWidth  * dpr);
+        canvas.height = Math.floor(window.innerHeight * dpr);
+        gl.viewport(0, 0, canvas.width, canvas.height);
+      }
+      window.addEventListener('resize', resize);
+      resize();
+
+      const vsSrc = 'attribute vec2 a_pos; void main(){ gl_Position = vec4(a_pos, 0.0, 1.0); }';
+
+      const fsSrc = [
+        'precision highp float;',
+        'uniform vec2 u_res;',
+        'uniform float u_dpr;',
+        'uniform vec4 u_points[' + MAX_POINTS + '];',
+        'uniform vec2 u_vel[' + MAX_POINTS + '];',
+        'uniform int u_count;',
+
+        'float field(vec2 p, vec4 pt, vec2 vel){',
+        '  vec2 d = p - pt.xy;',
+        
+        // --- HOLLOW DIAMOND (Buttons - Rotated 45deg) pt.w = 3.0 ---
+        '  if (pt.w > 2.5) {',
+        '    float boxDist = (abs(d.x) + abs(d.y)) * 0.7071;', 
+        '    float thick = abs(boxDist - pt.z);',
+        '    float distSq = thick * thick * 1.5;',
+        '    return 3.0 / (distSq + 1.0);',
+        '  }',
+
+        // --- HOLLOW RING (3D Model) pt.w = 2.0 ---
+        '  if (pt.w > 1.5) {',
+        '    float distFromCenter = length(d);',
+        '    float ringThickness = abs(distFromCenter - pt.z);',
+        '    float ringDistSq = ringThickness * ringThickness * 1.5;',
+        '    return 3.0 / (ringDistSq + 1.0);', 
+        '  }',
+
+        // --- STANDARD SHAPES (Fluid/Rounded & Sharp Square) ---
+        '  float sp = length(vel);',
+        '  if (sp > 0.5){',
+        '    vec2 dir = vel / sp;',
+        '    float along = dot(d, dir);',
+        '    float stretch = 1.0 + clamp(sp * 0.015, 0.0, 40.0);', 
+        '    d -= dir * along * (1.0 - 1.0/stretch);',
+        '  }',
+        
+        '  float distSq = dot(d,d);',
+        
+        // Solid Sharp Square pt.w = 0.0
+        '  if (pt.w < 0.5) {',
+        '    float boxDist = max(abs(d.x), abs(d.y));',
+        '    distSq = boxDist * boxDist * 1.8;',
+        '  }',
+        
+        '  return (pt.z*pt.z) / (distSq + 1.0);',
+        '}',
+
+        'void main(){',
+        '  vec2 uv = gl_FragCoord.xy;',
+        '  uv.y = u_res.y - uv.y;',
+        '  vec2 px = uv / u_dpr;',
+        '  float f = 0.0;',
+        
+        '  for (int i=0; i<' + MAX_POINTS + '; i++){',
+        '    if (i >= u_count) break;',
+        '    f += field(px, u_points[i], u_vel[i]);',
+        '  }',
+
+        '  float paint = smoothstep(0.85, 0.95, f);',
+        '  if (paint < 0.01) discard;',
+        '  gl_FragColor = vec4(1.0, 1.0, 1.0, paint);',
+        '}'
+      ].join('\n');
+
+      function compile(type, src){
+        const sh = gl.createShader(type);
+        gl.shaderSource(sh, src);
+        gl.compileShader(sh);
+        if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) console.error(gl.getShaderInfoLog(sh));
+        return sh;
+      }
+      const prog = gl.createProgram();
+      gl.attachShader(prog, compile(gl.VERTEX_SHADER, vsSrc));
+      gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, fsSrc));
+      gl.linkProgram(prog);
+      gl.useProgram(prog);
+
+      const buf = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, -1,1, 1,-1, 1,1]), gl.STATIC_DRAW);
+      const aPos = gl.getAttribLocation(prog, 'a_pos');
+      gl.enableVertexAttribArray(aPos);
+      gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
+
+      const uRes = gl.getUniformLocation(prog, 'u_res');
+      const uDpr = gl.getUniformLocation(prog, 'u_dpr');
+      const uPts = gl.getUniformLocation(prog, 'u_points');
+      const uVel = gl.getUniformLocation(prog, 'u_vel');
+      const uCount = gl.getUniformLocation(prog, 'u_count');
+
+      gl.enable(gl.BLEND);
+      gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+
+      let mx = window.innerWidth/2, my = window.innerHeight/2;
+      let px = mx, py = my, vx = 0, vy = 0;
+      
+      const trail = [];
+      const MAX_TRAIL = 12; 
+      const pixels = []; 
+      
+      const pts = new Float32Array(MAX_POINTS * 4);
+      const vels = new Float32Array(MAX_POINTS * 2);
+
+      let hoverType = 0; 
+      let hoverBtnFactor = 0; 
+      let hoverTxtFactor = 0;
+      let hover3dFactor = 0;
+      let isDragging3D = false;
+      let drag3dFactor = 0;
+      
+      window.addEventListener('pointermove', e => { mx = e.clientX; my = e.clientY; });
+      
+      window.addEventListener('mouseover', e => {
+        if (e.target.closest('[data-cursor="3d"], canvas')) {
+            hoverType = 3;
+        } else if (e.target.closest('input[type="text"], input[type="email"], input[type="password"], textarea, [contenteditable="true"]')) {
+            hoverType = 2;
+        } else if (e.target.closest('button, a, input[type="submit"], [role="button"]')) {
+            hoverType = 1;
+        } else {
+            hoverType = 0;
+        }
+      });
+
+      window.addEventListener('mousedown', () => { if (hoverType === 3) isDragging3D = true; });
+      window.addEventListener('mouseup', () => { isDragging3D = false; });
+
+      let last = performance.now();
+      
+      function frame(now){
+        const dt = Math.min(0.05, (now - last) / 1000);
+        last = now;
+        
+        hoverBtnFactor += ((hoverType === 1 ? 1.0 : 0.0) - hoverBtnFactor) * 12.0 * dt; 
+        hoverTxtFactor += ((hoverType === 2 ? 1.0 : 0.0) - hoverTxtFactor) * 12.0 * dt; 
+        hover3dFactor  += ((hoverType === 3 ? 1.0 : 0.0) - hover3dFactor) * 12.0 * dt; 
+        drag3dFactor   += ((isDragging3D && hoverType === 3 ? 1.0 : 0.0) - drag3dFactor) * 15.0 * dt;
+        
+        const k = 1 - Math.pow(0.0005, dt); 
+        const nx = px + (mx - px) * k;
+        const ny = py + (my - py) * k;
+        vx = (nx - px) / Math.max(dt, 0.001);
+        vy = (ny - py) / Math.max(dt, 0.001);
+        px = nx; py = ny;
+        const speed = Math.hypot(vx, vy);
+
+        const maxHover = Math.max(hoverBtnFactor, hoverTxtFactor, hover3dFactor);
+        
+        if (speed > 400 && pixels.length < 40 && Math.random() > 0.3 && maxHover < 0.2) {
+            const angle = Math.atan2(vy, vx) + (Math.random() - 0.5) * 1.5; 
+            const dropSpeed = speed * (0.1 + Math.random() * 0.3);
+            pixels.push({ x: px, y: py, vx: Math.cos(angle) * dropSpeed, vy: Math.sin(angle) * dropSpeed, life: 1.0, size: 2 + Math.random() * 4 });
+        }
+
+        trail.push({ x: px, y: py });
+        if (trail.length > MAX_TRAIL) trail.shift();
+        for (let i=0; i<trail.length-1; i++){
+          trail[i].vx = (trail[i+1].x - trail[i].x) * 12;
+          trail[i].vy = (trail[i+1].y - trail[i].y) * 12;
+        }
+        const lastT = trail[trail.length-1];
+        if (lastT){ lastT.vx = vx * 0.008; lastT.vy = vy * 0.008; }
+
+        for (let i = pixels.length - 1; i >= 0; i--) {
+            let p = pixels[i]; p.life -= dt * 2.0; 
+            if (p.life <= 0) { pixels.splice(i, 1); continue; }
+            p.x += p.vx * dt; p.y += p.vy * dt; p.vx *= 0.85; p.vy *= 0.85;
+        }
+
+        const baseHeadR = 18 + Math.min(10, speed * 0.01); 
+        let count = 0;
+        
+        // 1. THE MAIN CORE (Fades out for text/3D)
+        const headR = baseHeadR * (1 - maxHover) + 4 * hoverBtnFactor; 
+        pts[0] = px; pts[1] = py; pts[2] = headR * (1 - hoverTxtFactor) * (1 - hover3dFactor); 
+        pts[3] = 1.0; 
+        vels[0] = vx * 0.01; vels[1] = vy * 0.01; 
+        count = 1;
+
+        // 2. SUBTLE BUTTON HOVER: Rotated 45-degree Diamond Box
+        if (hoverBtnFactor > 0.01) {
+            pts[count*4] = px; pts[count*4+1] = py;
+            pts[count*4+2] = 12 * hoverBtnFactor; 
+            pts[count*4+3] = 3.0; // Hollow Diamond flag
+            vels[count*2] = 0; vels[count*2+1] = 0;
+            count++;
+        }
+
+        // 3. TEXT HOVER: Proper Size Rounded I-Beam
+        if (hoverTxtFactor > 0.01) {
+            
+            // Vertical Stem
+            pts[count*4] = px; pts[count*4+1] = py;
+            pts[count*4+2] = 1.8 * hoverTxtFactor; 
+            pts[count*4+3] = 1.0; // Fluid/Rounded flag
+            vels[count*2] = 0; 
+            vels[count*2+1] = 200 * hoverTxtFactor; 
+            count++;
+
+            // Top Serif
+            pts[count*4] = px; pts[count*4+1] = py - 10 * hoverTxtFactor;
+            pts[count*4+2] = 1.8 * hoverTxtFactor; 
+            pts[count*4+3] = 1.0; 
+            vels[count*2] = 100 * hoverTxtFactor; 
+            vels[count*2+1] = 0; 
+            count++;
+
+            // Bottom Serif
+            pts[count*4] = px; pts[count*4+1] = py + 10 * hoverTxtFactor;
+            pts[count*4+2] = 1.8 * hoverTxtFactor; 
+            pts[count*4+3] = 1.0; 
+            vels[count*2] = 100 * hoverTxtFactor; 
+            vels[count*2+1] = 0; 
+            count++;
+        }
+
+        // 4. GYROSCOPIC AXIS LOCK (3D MODEL)
+        if (hover3dFactor > 0.01) {
+            // Smaller Hollow Ring
+            pts[count*4] = px; pts[count*4+1] = py;
+            pts[count*4+2] = 16 * hover3dFactor; // Shrunk from 24 to 16
+            pts[count*4+3] = 2.0; // Hollow Ring
+            vels[count*2] = 0; vels[count*2+1] = 0;
+            count++;
+
+            // Center Pivot Dot
+            pts[count*4] = px; pts[count*4+1] = py;
+            pts[count*4+2] = 2.5 * hover3dFactor; // Slightly smaller dot for precision
+            pts[count*4+3] = 0.0;
+            vels[count*2] = 0; vels[count*2+1] = 0;
+            count++;
+
+            // The Dynamic Rotation Axis (When Dragging)
+            if (drag3dFactor > 0.01 && speed > 5) {
+                const axisAngle = Math.atan2(vy, vx) + Math.PI / 2;
+                pts[count*4] = px; pts[count*4+1] = py;
+                pts[count*4+2] = 1.5 * drag3dFactor; pts[count*4+3] = 0.0;
+                vels[count*2] = Math.cos(axisAngle) * 350 * drag3dFactor; 
+                vels[count*2+1] = Math.sin(axisAngle) * 350 * drag3dFactor;
+                count++;
+            }
+        }
+
+        // 5. THE DATA CABLE TRAIL
+        const trailFade = 1.0 - maxHover;
+        for (let i=0; i<trail.length && count < MAX_POINTS; i++){
+          const t = trail[i]; const fade = 1.0 - i / trail.length;
+          pts[count*4] = t.x; pts[count*4+1] = t.y;
+          pts[count*4+2] = (baseHeadR * 0.6) * Math.pow(fade, 2.0) * trailFade; pts[count*4+3] = 1.0; 
+          vels[count*2] = t.vx || 0; vels[count*2+1] = t.vy || 0; count++;
+        }
+
+        // 6. THE SHED PIXELS
+        for (let i=0; i<pixels.length && count < MAX_POINTS; i++) {
+            const p = pixels[i]; pts[count*4] = p.x; pts[count*4+1] = p.y;
+            pts[count*4+2] = p.size * Math.pow(p.life, 0.5); pts[count*4+3] = 0.0; 
+            vels[count*2] = p.vx * 0.015; vels[count*2+1] = p.vy * 0.015; count++;
+        }
+
+        gl.clearColor(0,0,0,0);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        gl.uniform2f(uRes, canvas.width, canvas.height);
+        gl.uniform1f(uDpr, dpr);
+        gl.uniform4fv(uPts, pts);
+        gl.uniform2fv(uVel, vels);
+        gl.uniform1i(uCount, count);
+        gl.drawArrays(gl.TRIANGLES, 0, 6);
+        requestAnimationFrame(frame);
+      }
+      requestAnimationFrame(frame);
+    })();
+</script>
+</body>
+</html>

@@ -144,7 +144,7 @@
       <div class="hero-text reveal" style="animation-delay:.15s;">
         <span class="eyebrow">introducing</span>
         <h1>The Nexus Ring</h1>
-        <p>One ring. Every line. Every pod. Your fare, your identity, your journey — all on your finger.</p>
+        <p>One ring. Your fare, your identity, your journey. The city at your fingertips.</p>
       </div>
     </section>
 
@@ -200,7 +200,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 
   <script>
   const firebaseConfig = {
@@ -311,25 +311,48 @@
     const rim=new THREE.DirectionalLight(0xffffff,0.5); rim.position.set(0,4,-6); scene.add(rim);
     scene.add(new THREE.AmbientLight(0x404040,0.6));
 
-    let group=new THREE.Group(); scene.add(group);
-    const loader=new THREE.OBJLoader();
-    loader.load('object.obj',
-      (loaded)=>{
-        loaded.traverse(c=>{ if(c.isMesh){ c.material=new THREE.MeshPhysicalMaterial({color:0x1a1a1c,metalness:0.9,roughness:0.22,clearcoat:0.8,clearcoatRoughness:0.18,reflectivity:0.6}); } });
-        const box=new THREE.Box3().setFromObject(loaded);
-        const sizeBox=box.getSize(new THREE.Vector3());
-        const center=box.getCenter(new THREE.Vector3());
-        const maxDim=Math.max(sizeBox.x,sizeBox.y,sizeBox.z)||1;
-        const scale=3.4/maxDim;
-        loaded.scale.setScalar(scale);
-        loaded.position.sub(center.multiplyScalar(scale));
-        group.add(loaded);
-      },
-      undefined,
-      ()=>{
-        const obj=new THREE.Mesh(new THREE.TorusGeometry(1.4,0.45,48,128), new THREE.MeshPhysicalMaterial({color:0x1a1a1c,metalness:0.9,roughness:0.22,clearcoat:0.8,clearcoatRoughness:0.18}));
-        group.add(obj);
-      }
+    let group = new THREE.Group(); scene.add(group);
+    
+    // Use the modern GLTFLoader
+    const loader = new THREE.GLTFLoader();
+    
+    loader.load('object.glb', 
+        (gltf) => {
+            const loaded = gltf.scene; // GLTF wraps the object in a scene
+
+            // Optional: If you want to force the material to be super shiny like your original code, 
+            // you can still overwrite the Blender materials here:
+            /*
+            loaded.traverse((child) => {
+                if (child.isMesh) {
+                    child.material = new THREE.MeshPhysicalMaterial({
+                        color: 0x1a1a1c,
+                        metalness: 0.9,
+                        roughness: 0.22,
+                        clearcoat: 0.8,
+                        clearcoatRoughness: 0.18,
+                        reflectivity: 0.6
+                    });
+                }
+            });
+            */
+
+            // Center and scale the model just like before
+            const box = new THREE.Box3().setFromObject(loaded);
+            const sizeBox = box.getSize(new THREE.Vector3());
+            const center = box.getCenter(new THREE.Vector3());
+            const maxDim = Math.max(sizeBox.x, sizeBox.y, sizeBox.z) || 1;
+            const scale = 3.4 / maxDim;
+            
+            loaded.scale.setScalar(scale);
+            loaded.position.sub(center.multiplyScalar(scale));
+            
+            group.add(loaded);
+        },
+        undefined, // onProgress
+        (error) => {
+            console.error("Error loading GLB:", error);
+        }
     );
 
     // --- NEW INTERACTIVITY & INERTIA LOGIC ---
@@ -407,9 +430,11 @@
 
             // Smoothly reset if idle
             if (isIdle) {
+
                 velocity.y += (baseSpinSpeed - velocity.y) * 0.02;
-                group.rotation.x += (0 - group.rotation.x) * 0.05;
-                group.rotation.z += (0 - group.rotation.z) * 0.05;
+                group.rotation.x += (0.75 - group.rotation.x) * 0.05;
+                group.rotation.y += (7 - group.rotation.y) * 0.05;
+                group.rotation.z += (0.75 - group.rotation.z) * 0.05;
             }
         }
 
@@ -474,110 +499,295 @@
   })();
 
   /* LIQUID CURSOR — identical to dashboard */
-  (function initFuturisticHoverCursor(){
-    const canvas=document.getElementById('fluid-canvas');
-    const gl=canvas.getContext('webgl',{premultipliedAlpha:false,antialias:false,alpha:true});
-    if(!gl){ canvas.style.display='none'; return; }
-    const MAX_POINTS=80, dpr=Math.min(window.devicePixelRatio||1,2);
-    function resize(){ canvas.width=Math.floor(window.innerWidth*dpr); canvas.height=Math.floor(window.innerHeight*dpr); gl.viewport(0,0,canvas.width,canvas.height); }
-    window.addEventListener('resize',resize); resize();
+  (function initSubtleMetroCursor(){
+      const canvas = document.getElementById('fluid-canvas');
+      const gl = canvas.getContext('webgl', { premultipliedAlpha:false, antialias:false, alpha:true });
+      if (!gl){ canvas.style.display = 'none'; return; }
 
-    const vsSrc='attribute vec2 a_pos; void main(){ gl_Position = vec4(a_pos, 0.0, 1.0); }';
-    const fsSrc=[
-      'precision highp float;',
-      'uniform vec2 u_res;','uniform float u_dpr;',
-      'uniform vec4 u_points['+MAX_POINTS+'];','uniform vec2 u_vel['+MAX_POINTS+'];','uniform int u_count;',
-      'float field(vec2 p, vec4 pt, vec2 vel){',
-      '  vec2 d = p - pt.xy; float sp = length(vel);',
-      '  if (sp > 0.5 && pt.w > 0.5){ vec2 dir = vel/sp; float along = dot(d, dir); float stretch = 1.0 + clamp(sp*0.02, 0.0, 3.0); d -= dir * along * (1.0 - 1.0/stretch); }',
-      '  float distSq = dot(d,d);',
-      '  if (pt.w < 0.5) { float boxDist = max(abs(d.x), abs(d.y)); distSq = boxDist * boxDist * 1.8; }',
-      '  return (pt.z*pt.z) / (distSq + 1.0);',
-      '}',
-      'void main(){',
-      '  vec2 uv = gl_FragCoord.xy; uv.y = u_res.y - uv.y; vec2 px = uv/u_dpr; float f = 0.0;',
-      '  for (int i=0; i<'+MAX_POINTS+'; i++){ if (i >= u_count) break; f += field(px, u_points[i], u_vel[i]); }',
-      '  float paint = smoothstep(0.85, 0.95, f); if (paint < 0.01) discard;',
-      '  gl_FragColor = vec4(1.0, 1.0, 1.0, paint);',
-      '}'
-    ].join('\n');
+      const MAX_POINTS = 80; 
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
 
-    function compile(type,src){ const sh=gl.createShader(type); gl.shaderSource(sh,src); gl.compileShader(sh); if(!gl.getShaderParameter(sh,gl.COMPILE_STATUS)) console.error(gl.getShaderInfoLog(sh)); return sh; }
-    const prog=gl.createProgram();
-    gl.attachShader(prog,compile(gl.VERTEX_SHADER,vsSrc));
-    gl.attachShader(prog,compile(gl.FRAGMENT_SHADER,fsSrc));
-    gl.linkProgram(prog); gl.useProgram(prog);
-    const buf=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,buf);
-    gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,-1,1,1,-1,1,1]),gl.STATIC_DRAW);
-    const aPos=gl.getAttribLocation(prog,'a_pos'); gl.enableVertexAttribArray(aPos); gl.vertexAttribPointer(aPos,2,gl.FLOAT,false,0,0);
-    const uRes=gl.getUniformLocation(prog,'u_res'), uDpr=gl.getUniformLocation(prog,'u_dpr'),
-          uPts=gl.getUniformLocation(prog,'u_points'), uVel=gl.getUniformLocation(prog,'u_vel'),
-          uCount=gl.getUniformLocation(prog,'u_count');
-    gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);
-
-    let mx=window.innerWidth/2, my=window.innerHeight/2, px=mx, py=my, vx=0, vy=0;
-    const trail=[], MAX_TRAIL=12, pixels=[];
-    const pts=new Float32Array(MAX_POINTS*4), vels=new Float32Array(MAX_POINTS*2);
-    let isHovering=false, hoverFactor=0;
-
-    window.addEventListener('pointermove',e=>{ mx=e.clientX; my=e.clientY; });
-    window.addEventListener('mouseover',e=>{ isHovering=!!e.target.closest('button, a, input, [role="button"]'); });
-
-    let last=performance.now();
-    function frame(now){
-      const dt=Math.min(0.05,(now-last)/1000); last=now;
-      hoverFactor += ((isHovering?1:0) - hoverFactor)*12*dt;
-      const k=1-Math.pow(0.0005,dt);
-      const nx=px+(mx-px)*k, ny=py+(my-py)*k;
-      vx=(nx-px)/Math.max(dt,0.001); vy=(ny-py)/Math.max(dt,0.001);
-      px=nx; py=ny;
-      const speed=Math.hypot(vx,vy);
-
-      if(speed>400 && pixels.length<40 && Math.random()>0.3 && hoverFactor<0.2){
-        const angle=Math.atan2(vy,vx)+(Math.random()-0.5)*1.5;
-        const dropSpeed=speed*(0.1+Math.random()*0.3);
-        pixels.push({x:px,y:py,vx:Math.cos(angle)*dropSpeed,vy:Math.sin(angle)*dropSpeed,life:1.0,size:2+Math.random()*5});
+      function resize(){
+        canvas.width  = Math.floor(window.innerWidth  * dpr);
+        canvas.height = Math.floor(window.innerHeight * dpr);
+        gl.viewport(0, 0, canvas.width, canvas.height);
       }
-      trail.push({x:px,y:py}); if(trail.length>MAX_TRAIL) trail.shift();
-      for(let i=0;i<trail.length-1;i++){ trail[i].vx=(trail[i+1].x-trail[i].x)*12; trail[i].vy=(trail[i+1].y-trail[i].y)*12; }
-      const lastT=trail[trail.length-1]; if(lastT){ lastT.vx=vx*0.008; lastT.vy=vy*0.008; }
+      window.addEventListener('resize', resize);
+      resize();
 
-      for(let i=pixels.length-1;i>=0;i--){ let p=pixels[i]; p.life-=dt*2; if(p.life<=0){pixels.splice(i,1);continue;} p.x+=p.vx*dt; p.y+=p.vy*dt; p.vx*=0.85; p.vy*=0.85; }
+      const vsSrc = 'attribute vec2 a_pos; void main(){ gl_Position = vec4(a_pos, 0.0, 1.0); }';
 
-      const baseHeadR=18+Math.min(10,speed*0.01); let count=0;
-      const headR=baseHeadR*(1-hoverFactor)+6*hoverFactor;
-      pts[0]=px; pts[1]=py; pts[2]=headR; pts[3]=1.0; vels[0]=vx*0.01; vels[1]=vy*0.01; count=1;
+      const fsSrc = [
+        'precision highp float;',
+        'uniform vec2 u_res;',
+        'uniform float u_dpr;',
+        'uniform vec4 u_points[' + MAX_POINTS + '];',
+        'uniform vec2 u_vel[' + MAX_POINTS + '];',
+        'uniform int u_count;',
 
-      if(hoverFactor>0.01){
-        const spread=24*hoverFactor, dotR=7*hoverFactor, rotation=now*0.002;
-        for(let j=0;j<4;j++){
-          const angle=rotation+(j*(Math.PI/2));
-          pts[count*4]=px+Math.cos(angle)*spread; pts[count*4+1]=py+Math.sin(angle)*spread;
-          pts[count*4+2]=dotR; pts[count*4+3]=0.0; vels[count*2]=0; vels[count*2+1]=0; count++;
+        'float field(vec2 p, vec4 pt, vec2 vel){',
+        '  vec2 d = p - pt.xy;',
+        
+        // --- HOLLOW DIAMOND (Buttons - Rotated 45deg) pt.w = 3.0 ---
+        '  if (pt.w > 2.5) {',
+        '    float boxDist = (abs(d.x) + abs(d.y)) * 0.7071;', 
+        '    float thick = abs(boxDist - pt.z);',
+        '    float distSq = thick * thick * 1.5;',
+        '    return 3.0 / (distSq + 1.0);',
+        '  }',
+
+        // --- HOLLOW RING (3D Model) pt.w = 2.0 ---
+        '  if (pt.w > 1.5) {',
+        '    float distFromCenter = length(d);',
+        '    float ringThickness = abs(distFromCenter - pt.z);',
+        '    float ringDistSq = ringThickness * ringThickness * 1.5;',
+        '    return 3.0 / (ringDistSq + 1.0);', 
+        '  }',
+
+        // --- STANDARD SHAPES (Fluid/Rounded & Sharp Square) ---
+        '  float sp = length(vel);',
+        '  if (sp > 0.5){',
+        '    vec2 dir = vel / sp;',
+        '    float along = dot(d, dir);',
+        '    float stretch = 1.0 + clamp(sp * 0.015, 0.0, 40.0);', 
+        '    d -= dir * along * (1.0 - 1.0/stretch);',
+        '  }',
+        
+        '  float distSq = dot(d,d);',
+        
+        // Solid Sharp Square pt.w = 0.0
+        '  if (pt.w < 0.5) {',
+        '    float boxDist = max(abs(d.x), abs(d.y));',
+        '    distSq = boxDist * boxDist * 1.8;',
+        '  }',
+        
+        '  return (pt.z*pt.z) / (distSq + 1.0);',
+        '}',
+
+        'void main(){',
+        '  vec2 uv = gl_FragCoord.xy;',
+        '  uv.y = u_res.y - uv.y;',
+        '  vec2 px = uv / u_dpr;',
+        '  float f = 0.0;',
+        
+        '  for (int i=0; i<' + MAX_POINTS + '; i++){',
+        '    if (i >= u_count) break;',
+        '    f += field(px, u_points[i], u_vel[i]);',
+        '  }',
+
+        '  float paint = smoothstep(0.85, 0.95, f);',
+        '  if (paint < 0.01) discard;',
+        '  gl_FragColor = vec4(1.0, 1.0, 1.0, paint);',
+        '}'
+      ].join('\n');
+
+      function compile(type, src){
+        const sh = gl.createShader(type);
+        gl.shaderSource(sh, src);
+        gl.compileShader(sh);
+        if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) console.error(gl.getShaderInfoLog(sh));
+        return sh;
+      }
+      const prog = gl.createProgram();
+      gl.attachShader(prog, compile(gl.VERTEX_SHADER, vsSrc));
+      gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, fsSrc));
+      gl.linkProgram(prog);
+      gl.useProgram(prog);
+
+      const buf = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, -1,1, 1,-1, 1,1]), gl.STATIC_DRAW);
+      const aPos = gl.getAttribLocation(prog, 'a_pos');
+      gl.enableVertexAttribArray(aPos);
+      gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
+
+      const uRes = gl.getUniformLocation(prog, 'u_res');
+      const uDpr = gl.getUniformLocation(prog, 'u_dpr');
+      const uPts = gl.getUniformLocation(prog, 'u_points');
+      const uVel = gl.getUniformLocation(prog, 'u_vel');
+      const uCount = gl.getUniformLocation(prog, 'u_count');
+
+      gl.enable(gl.BLEND);
+      gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+
+      let mx = window.innerWidth/2, my = window.innerHeight/2;
+      let px = mx, py = my, vx = 0, vy = 0;
+      
+      const trail = [];
+      const MAX_TRAIL = 12; 
+      const pixels = []; 
+      
+      const pts = new Float32Array(MAX_POINTS * 4);
+      const vels = new Float32Array(MAX_POINTS * 2);
+
+      let hoverType = 0; 
+      let hoverBtnFactor = 0; 
+      let hoverTxtFactor = 0;
+      let hover3dFactor = 0;
+      let isDragging3D = false;
+      let drag3dFactor = 0;
+      
+      window.addEventListener('pointermove', e => { mx = e.clientX; my = e.clientY; });
+      
+      window.addEventListener('mouseover', e => {
+        if (e.target.closest('[data-cursor="3d"], canvas')) {
+            hoverType = 3;
+        } else if (e.target.closest('input[type="text"], input[type="email"], input[type="password"], textarea, [contenteditable="true"]')) {
+            hoverType = 2;
+        } else if (e.target.closest('button, a, input[type="submit"], [role="button"]')) {
+            hoverType = 1;
+        } else {
+            hoverType = 0;
         }
-      }
-      const trailFade=1-hoverFactor;
-      for(let i=0;i<trail.length && count<MAX_POINTS;i++){
-        const t=trail[i], fade=1-i/trail.length;
-        pts[count*4]=t.x; pts[count*4+1]=t.y;
-        pts[count*4+2]=(baseHeadR*0.6)*Math.pow(fade,2)*trailFade; pts[count*4+3]=1.0;
-        vels[count*2]=t.vx||0; vels[count*2+1]=t.vy||0; count++;
-      }
-      for(let i=0;i<pixels.length && count<MAX_POINTS;i++){
-        const p=pixels[i];
-        pts[count*4]=p.x; pts[count*4+1]=p.y;
-        pts[count*4+2]=p.size*Math.pow(p.life,0.5); pts[count*4+3]=0.0;
-        vels[count*2]=p.vx*0.015; vels[count*2+1]=p.vy*0.015; count++;
-      }
+      });
 
-      gl.clearColor(0,0,0,0); gl.clear(gl.COLOR_BUFFER_BIT);
-      gl.uniform2f(uRes,canvas.width,canvas.height); gl.uniform1f(uDpr,dpr);
-      gl.uniform4fv(uPts,pts); gl.uniform2fv(uVel,vels); gl.uniform1i(uCount,count);
-      gl.drawArrays(gl.TRIANGLES,0,6);
+      window.addEventListener('mousedown', () => { if (hoverType === 3) isDragging3D = true; });
+      window.addEventListener('mouseup', () => { isDragging3D = false; });
+
+      let last = performance.now();
+      
+      function frame(now){
+        const dt = Math.min(0.05, (now - last) / 1000);
+        last = now;
+        
+        hoverBtnFactor += ((hoverType === 1 ? 1.0 : 0.0) - hoverBtnFactor) * 12.0 * dt; 
+        hoverTxtFactor += ((hoverType === 2 ? 1.0 : 0.0) - hoverTxtFactor) * 12.0 * dt; 
+        hover3dFactor  += ((hoverType === 3 ? 1.0 : 0.0) - hover3dFactor) * 12.0 * dt; 
+        drag3dFactor   += ((isDragging3D && hoverType === 3 ? 1.0 : 0.0) - drag3dFactor) * 15.0 * dt;
+        
+        const k = 1 - Math.pow(0.0005, dt); 
+        const nx = px + (mx - px) * k;
+        const ny = py + (my - py) * k;
+        vx = (nx - px) / Math.max(dt, 0.001);
+        vy = (ny - py) / Math.max(dt, 0.001);
+        px = nx; py = ny;
+        const speed = Math.hypot(vx, vy);
+
+        const maxHover = Math.max(hoverBtnFactor, hoverTxtFactor, hover3dFactor);
+        
+        if (speed > 400 && pixels.length < 40 && Math.random() > 0.3 && maxHover < 0.2) {
+            const angle = Math.atan2(vy, vx) + (Math.random() - 0.5) * 1.5; 
+            const dropSpeed = speed * (0.1 + Math.random() * 0.3);
+            pixels.push({ x: px, y: py, vx: Math.cos(angle) * dropSpeed, vy: Math.sin(angle) * dropSpeed, life: 1.0, size: 2 + Math.random() * 4 });
+        }
+
+        trail.push({ x: px, y: py });
+        if (trail.length > MAX_TRAIL) trail.shift();
+        for (let i=0; i<trail.length-1; i++){
+          trail[i].vx = (trail[i+1].x - trail[i].x) * 12;
+          trail[i].vy = (trail[i+1].y - trail[i].y) * 12;
+        }
+        const lastT = trail[trail.length-1];
+        if (lastT){ lastT.vx = vx * 0.008; lastT.vy = vy * 0.008; }
+
+        for (let i = pixels.length - 1; i >= 0; i--) {
+            let p = pixels[i]; p.life -= dt * 2.0; 
+            if (p.life <= 0) { pixels.splice(i, 1); continue; }
+            p.x += p.vx * dt; p.y += p.vy * dt; p.vx *= 0.85; p.vy *= 0.85;
+        }
+
+        const baseHeadR = 18 + Math.min(10, speed * 0.01); 
+        let count = 0;
+        
+        // 1. THE MAIN CORE (Fades out for text/3D)
+        const headR = baseHeadR * (1 - maxHover) + 4 * hoverBtnFactor; 
+        pts[0] = px; pts[1] = py; pts[2] = headR * (1 - hoverTxtFactor) * (1 - hover3dFactor); 
+        pts[3] = 1.0; 
+        vels[0] = vx * 0.01; vels[1] = vy * 0.01; 
+        count = 1;
+
+        // 2. SUBTLE BUTTON HOVER: Rotated 45-degree Diamond Box
+        if (hoverBtnFactor > 0.01) {
+            pts[count*4] = px; pts[count*4+1] = py;
+            pts[count*4+2] = 12 * hoverBtnFactor; 
+            pts[count*4+3] = 3.0; // Hollow Diamond flag
+            vels[count*2] = 0; vels[count*2+1] = 0;
+            count++;
+        }
+
+        // 3. TEXT HOVER: Proper Size Rounded I-Beam
+        if (hoverTxtFactor > 0.01) {
+            
+            // Vertical Stem
+            pts[count*4] = px; pts[count*4+1] = py;
+            pts[count*4+2] = 1.8 * hoverTxtFactor; 
+            pts[count*4+3] = 1.0; // Fluid/Rounded flag
+            vels[count*2] = 0; 
+            vels[count*2+1] = 200 * hoverTxtFactor; 
+            count++;
+
+            // Top Serif
+            pts[count*4] = px; pts[count*4+1] = py - 10 * hoverTxtFactor;
+            pts[count*4+2] = 1.8 * hoverTxtFactor; 
+            pts[count*4+3] = 1.0; 
+            vels[count*2] = 100 * hoverTxtFactor; 
+            vels[count*2+1] = 0; 
+            count++;
+
+            // Bottom Serif
+            pts[count*4] = px; pts[count*4+1] = py + 10 * hoverTxtFactor;
+            pts[count*4+2] = 1.8 * hoverTxtFactor; 
+            pts[count*4+3] = 1.0; 
+            vels[count*2] = 100 * hoverTxtFactor; 
+            vels[count*2+1] = 0; 
+            count++;
+        }
+
+        // 4. GYROSCOPIC AXIS LOCK (3D MODEL)
+        if (hover3dFactor > 0.01) {
+            // Smaller Hollow Ring
+            pts[count*4] = px; pts[count*4+1] = py;
+            pts[count*4+2] = 16 * hover3dFactor; // Shrunk from 24 to 16
+            pts[count*4+3] = 2.0; // Hollow Ring
+            vels[count*2] = 0; vels[count*2+1] = 0;
+            count++;
+
+            // Center Pivot Dot
+            pts[count*4] = px; pts[count*4+1] = py;
+            pts[count*4+2] = 2.5 * hover3dFactor; // Slightly smaller dot for precision
+            pts[count*4+3] = 0.0;
+            vels[count*2] = 0; vels[count*2+1] = 0;
+            count++;
+
+            // The Dynamic Rotation Axis (When Dragging)
+            if (drag3dFactor > 0.01 && speed > 5) {
+                const axisAngle = Math.atan2(vy, vx) + Math.PI / 2;
+                pts[count*4] = px; pts[count*4+1] = py;
+                pts[count*4+2] = 1.5 * drag3dFactor; pts[count*4+3] = 0.0;
+                vels[count*2] = Math.cos(axisAngle) * 350 * drag3dFactor; 
+                vels[count*2+1] = Math.sin(axisAngle) * 350 * drag3dFactor;
+                count++;
+            }
+        }
+
+        // 5. THE DATA CABLE TRAIL
+        const trailFade = 1.0 - maxHover;
+        for (let i=0; i<trail.length && count < MAX_POINTS; i++){
+          const t = trail[i]; const fade = 1.0 - i / trail.length;
+          pts[count*4] = t.x; pts[count*4+1] = t.y;
+          pts[count*4+2] = (baseHeadR * 0.6) * Math.pow(fade, 2.0) * trailFade; pts[count*4+3] = 1.0; 
+          vels[count*2] = t.vx || 0; vels[count*2+1] = t.vy || 0; count++;
+        }
+
+        // 6. THE SHED PIXELS
+        for (let i=0; i<pixels.length && count < MAX_POINTS; i++) {
+            const p = pixels[i]; pts[count*4] = p.x; pts[count*4+1] = p.y;
+            pts[count*4+2] = p.size * Math.pow(p.life, 0.5); pts[count*4+3] = 0.0; 
+            vels[count*2] = p.vx * 0.015; vels[count*2+1] = p.vy * 0.015; count++;
+        }
+
+        gl.clearColor(0,0,0,0);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        gl.uniform2f(uRes, canvas.width, canvas.height);
+        gl.uniform1f(uDpr, dpr);
+        gl.uniform4fv(uPts, pts);
+        gl.uniform2fv(uVel, vels);
+        gl.uniform1i(uCount, count);
+        gl.drawArrays(gl.TRIANGLES, 0, 6);
+        requestAnimationFrame(frame);
+      }
       requestAnimationFrame(frame);
-    }
-    requestAnimationFrame(frame);
-  })();
+    })();
   </script>
 </body>
 </html>
