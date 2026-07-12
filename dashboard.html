@@ -18,6 +18,7 @@
     --paper:#f5f5f4;
     --hair:rgba(255,255,255,0.08);
     --hair-strong:rgba(255,255,255,0.16);
+    --warn:#f5f5f4;
     --display:"Bricolage Grotesque", sans-serif;
     --body:"Bricolage Grotesque", sans-serif;
     --hand:"Bricolage Grotesque", sans-serif;
@@ -163,6 +164,7 @@
   .station .s-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
   .station .s-name{font-family:var(--body);font-size:14px;font-weight:300;}
   .station .s-tag{font-family:var(--display);font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:var(--steel);}
+  .station .s-tag.tag-high{color:var(--paper);}
   .bar{height:1px;background:rgba(255,255,255,0.08);overflow:hidden;}
   .bar i{display:block;height:100%;width:0;background:var(--paper);transition:width .9s var(--ease);}
 
@@ -195,6 +197,32 @@
   .fare-preview .pv{color:var(--paper);font-weight:500;}
   .modal-error{background:transparent;border:1px solid var(--hair-strong);border-radius:2px;padding:12px 15px;font-family:var(--body);font-size:13px;color:var(--paper);display:none;font-weight:300;}
   .modal-error.show{display:block;}
+
+  /* High-traffic advisory banner in the booking modal */
+  .modal-warning{
+    display:none;
+    background:rgba(245,245,244,0.06);
+    border:1px solid var(--paper);
+    border-radius:2px;
+    padding:14px 16px;
+    font-family:var(--body);
+    font-size:13px;
+    font-weight:300;
+    color:var(--paper);
+    line-height:1.5;
+  }
+  .modal-warning.show{display:flex;gap:12px;align-items:flex-start;}
+  .modal-warning .mw-icon{
+    font-family:var(--display);font-size:14px;letter-spacing:0;flex-shrink:0;
+    width:22px;height:22px;border:1px solid var(--paper);border-radius:50%;
+    display:flex;align-items:center;justify-content:center;margin-top:1px;
+  }
+  .modal-warning .mw-text b{font-weight:500;}
+  .modal-warning .mw-text .mw-tag{
+    display:block;margin-top:6px;font-family:var(--display);font-size:10px;
+    letter-spacing:0.2em;text-transform:uppercase;color:var(--steel);
+  }
+
   .modal-actions{display:flex;gap:12px;margin-top:6px;}
   .modal-actions .btn{flex:1;}
   .modal-close{position:absolute;top:20px;right:22px;background:none;border:none;color:var(--steel);font-size:22px;cursor:none;transition:color .3s var(--ease);}
@@ -411,6 +439,10 @@
       <h2>New Booking</h2>
       <p class="m-sub">Pick your stops — fare is held on booking and charged only when you exit the pod at your destination.</p>
       <div class="modal-error" id="booking-error"></div>
+      <div class="modal-warning" id="booking-warning">
+        <span class="mw-icon">!</span>
+        <span class="mw-text" id="booking-warning-text"></span>
+      </div>
       <div class="field-group">
         <label class="field-label">From</label>
         <select class="field-select" id="bk-from"></select>
@@ -625,6 +657,10 @@
   /* ============ STATE ============ */
   let currentUser=null, profile=null, bookings=[], chart=null, unsub=null, activeTrip=null, tripTimer=null;
 
+  // Traffic-tag lookup shared between the "Line Traffic" card and the booking modal advisory.
+  let congestionTags = {}; // { stationName: 'High' | 'Medium' | 'Low' }
+  let bookingWarningAcknowledged = false;
+
 /* ============ AUTH GUARD ============ */
 auth.onAuthStateChanged(async (user)=>{
   if(!user){ window.location.href='auth.html'; return; }
@@ -654,6 +690,7 @@ auth.onAuthStateChanged(async (user)=>{
     renderChart();
     renderCongestion();
     applyRingState();
+    checkTrafficWarning();
   }
 
   function applyRingState(){
@@ -739,18 +776,48 @@ function animateTo(id, target, raw){
       }).length;
     });
     const max=Math.max(1,...counts);
+    congestionTags = {};
     const list=document.getElementById('congestion-list');
     list.innerHTML=STATIONS.map((s,i)=>{
       const c=counts[i]; const ratio=c/max;
       let tag='Low';
       if(ratio>0.66){tag='High';}
       else if(ratio>0.33){tag='Medium';}
+      congestionTags[s]=tag;
       const w=Math.max(8,Math.round(ratio*100));
+      const tagClass = tag==='High' ? ' tag-high' : '';
       return `<div class="station">
-        <div class="s-row"><span class="s-name">${s}</span><span class="s-tag">${tag}</span></div>
+        <div class="s-row"><span class="s-name">${s}</span><span class="s-tag${tagClass}">${tag}</span></div>
         <div class="bar"><i style="width:${w}%"></i></div>
       </div>`;
     }).join('');
+  }
+
+  /* ============ HIGH-TRAFFIC BOOKING ADVISORY ============ */
+  // Reads the same congestion tags shown in the "Line Traffic" card. If either the
+  // origin or destination station is currently tagged High, we surface an advisory
+  // in the booking modal suggesting the train instead, and require a confirmed
+  // second click before the pod booking goes through.
+  function checkTrafficWarning(){
+    const warningBox=document.getElementById('booking-warning');
+    const warningText=document.getElementById('booking-warning-text');
+    const confirmBtn=document.getElementById('bk-confirm');
+    if(!warningBox||!confirmBtn) return;
+
+    const from=bkFrom.value, to=bkTo.value;
+    const fromTag=congestionTags[from];
+    const toTag=congestionTags[to];
+    const highStation = fromTag==='High' ? from : (toTag==='High' ? to : null);
+
+    if(highStation && from!==to){
+      warningBox.classList.add('show');
+      warningText.innerHTML = '<b>'+highStation+'</b> is currently running high pod traffic. Consider taking the train on this leg instead.<span class="mw-tag">Traffic: High</span>';
+      confirmBtn.textContent = bookingWarningAcknowledged ? 'Book Anyway' : 'Book Anyway';
+    }else{
+      warningBox.classList.remove('show');
+      confirmBtn.textContent = 'Confirm Booking';
+      bookingWarningAcknowledged = false;
+    }
   }
 
   /* ============ LIVE POD TRACKING ============ */
@@ -873,12 +940,28 @@ function animateTo(id, target, raw){
     const f=fareFor(bkFrom.value,bkTo.value);
     document.getElementById('bk-fare').textContent='₹'+f;
   }
-  bkFrom.addEventListener('change',updateFare);
-  bkTo.addEventListener('change',updateFare);
+  function onStationChange(){
+    updateFare();
+    bookingWarningAcknowledged = false; // stations changed — re-arm the advisory
+    checkTrafficWarning();
+  }
+  bkFrom.addEventListener('change',onStationChange);
+  bkTo.addEventListener('change',onStationChange);
   updateFare();
 
-  function openModal(id){ document.getElementById(id).classList.add('show'); }
-  function closeModal(id){ document.getElementById(id).classList.remove('show'); }
+  function openModal(id){
+    document.getElementById(id).classList.add('show');
+    if(id==='booking-modal'){
+      bookingWarningAcknowledged = false;
+      checkTrafficWarning();
+    }
+  }
+  function closeModal(id){
+    document.getElementById(id).classList.remove('show');
+    if(id==='booking-modal'){
+      bookingWarningAcknowledged = false;
+    }
+  }
   document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',()=>closeModal(b.dataset.close)));
   document.querySelectorAll('.modal-back').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('show');}));
 
@@ -893,6 +976,17 @@ function animateTo(id, target, raw){
     const fare=fareFor(from,to);
     if((profile?.balance||0)<fare){ err.textContent='Insufficient balance. Please top up your wallet.'; err.classList.add('show'); return; }
     if(activeTrip){ err.textContent='Your pod is already on a trip. Wait for it to arrive.'; err.classList.add('show'); return; }
+
+    // High-traffic advisory gate: first click on a High-traffic leg just confirms the
+    // person has seen the warning; it does not book yet.
+    const fromTag=congestionTags[from], toTag=congestionTags[to];
+    const highStation = fromTag==='High' ? from : (toTag==='High' ? to : null);
+    if(highStation && !bookingWarningAcknowledged){
+      bookingWarningAcknowledged = true;
+      checkTrafficWarning();
+      return;
+    }
+
     const btn=document.getElementById('bk-confirm'); btn.disabled=true; btn.textContent='Processing…';
     try{
       const id=await Store.addBooking({from,to,fare,status:'Active',timestamp:Date.now()});
@@ -901,7 +995,11 @@ function animateTo(id, target, raw){
       startTrip(id, from, to, fare);
     }catch(e){
       err.textContent='Could not complete booking. Try again.'; err.classList.add('show');
-    }finally{ btn.disabled=false; btn.textContent='Confirm Booking'; }
+    }finally{
+      btn.disabled=false;
+      bookingWarningAcknowledged=false;
+      checkTrafficWarning();
+    }
   });
 
   /* ============ TOP-UP MODAL ============ */

@@ -25,7 +25,6 @@
   #fluid-canvas{position:fixed;inset:0;width:100vw;height:100vh;z-index:9000;pointer-events:none;mix-blend-mode:difference;}
   #watermark-canvas{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:420px;height:420px;z-index:0;opacity:0.05;pointer-events:none;}
 
-  /* Navbar — identical to dashboard */
   .topbar{
     position:fixed;top:0;left:0;right:0;z-index:80;
     display:flex;align-items:center;justify-content:space-between;
@@ -90,7 +89,8 @@
   .buy-eyebrow{font-family:var(--display);font-size:11px;letter-spacing:0.28em;text-transform:uppercase;color:var(--steel);}
   .buy-price{font-family:var(--display);font-weight:400;font-size:clamp(48px,7.6vw,72px);letter-spacing:-0.02em;margin:20px 0 6px;line-height:1;}
   .buy-price .cur{font-size:0.42em;vertical-align:super;color:var(--steel);margin-right:8px;font-weight:300;}
-  .buy-sub{font-family:var(--body);font-weight:300;font-size:13px;color:var(--steel);margin-bottom:36px;}
+  .buy-sub{font-family:var(--body);font-weight:300;font-size:13px;color:var(--steel);margin-bottom:8px;}
+  .buy-balance{font-family:var(--body);font-weight:300;font-size:13px;color:var(--mist);margin-bottom:36px;}
   .btn{border:none;border-radius:2px;padding:14px 28px;cursor:none;font-family:var(--display);font-size:11px;letter-spacing:0.24em;text-transform:uppercase;font-weight:400;transition:all .3s var(--ease);}
   .btn-primary{background:var(--paper);color:var(--ink);}
   .btn-primary:hover{background:var(--mist);}
@@ -185,6 +185,7 @@
           <span class="buy-eyebrow">The Nexus Ring</span>
           <div class="buy-price"><span class="cur">₹</span>2,499</div>
           <div class="buy-sub">One-time purchase · Free shipping · Lifetime pairing</div>
+          <div class="buy-balance" id="buy-balance"></div>
           <div id="buy-actions">
             <button class="btn btn-primary" id="buy-btn">Book the Nexus Ring</button>
           </div>
@@ -215,6 +216,8 @@
   const auth = firebase.auth();
   const db = firebase.firestore();
 
+  const RING_PRICE = 2499;
+
   (function initAmbient(){
     const a=document.getElementById('ambient-audio'); if(!a)return; a.volume=0.35;
     let started=false; const start=()=>{if(started)return;a.play().then(()=>{started=true;}).catch(()=>{});};
@@ -239,17 +242,52 @@
       if(lp){ profile=lp; } else { profile={name:user.displayName||user.email?.split('@')[0]||'traveler',email:user.email||'',balance:240,hasRing:false,createdAt:Date.now()}; localStorage.setItem('mn_profile_'+user.uid,JSON.stringify(profile)); }
     }
     if(profile.hasRing===undefined) profile.hasRing=false;
+    if(profile.balance===undefined) profile.balance=0;
     renderBuyState();
   });
 
-  async function setHasRing(val){
-    try{ await db.collection('users').doc(currentUser.uid).set({hasRing:val,updatedAt:Date.now()},{merge:true}); }
-    catch(e){ const p=JSON.parse(localStorage.getItem('mn_profile_'+currentUser.uid)||'{}'); p.hasRing=val; localStorage.setItem('mn_profile_'+currentUser.uid,JSON.stringify(p)); }
-    profile.hasRing=val;
+  /*
+    Runs the purchase as a single Firestore transaction so the balance
+    deduction and the hasRing flag can never land out of sync (double
+    click, slow network, etc). Falls back to a local-only debit if
+    Firestore can't be reached, matching the degraded-mode pattern used
+    for profile loading above. Guarded by a hard timeout so the UI can
+    never get stuck on "Processing…" indefinitely.
+  */
+  async function purchaseRing(){
+    const ref = db.collection('users').doc(currentUser.uid);
+
+    try{
+      const newBalance = await Promise.race([
+        db.runTransaction(async (tx)=>{
+          const snap = await tx.get(ref);
+          const data = snap.exists ? snap.data() : profile;
+          if(data.hasRing){ return data.balance!==undefined ? data.balance : profile.balance; }
+          const bal = data.balance!==undefined ? data.balance : 0;
+          if(bal < RING_PRICE){ throw new Error('insufficient'); }
+          const newBal = bal - RING_PRICE;
+          tx.set(ref, {hasRing:true, balance:newBal, updatedAt:Date.now()}, {merge:true});
+          return newBal;
+        }),
+        new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),8000))
+      ]);
+      profile.hasRing = true;
+      profile.balance = newBalance;
+    }catch(e){
+      if(e.message==='insufficient') throw e;
+      // Firestore unreachable/timed out — degrade to local-only debit,
+      // same fallback used elsewhere in this file.
+      if((profile.balance||0) < RING_PRICE){ throw new Error('insufficient'); }
+      profile.hasRing = true;
+      profile.balance = (profile.balance||0) - RING_PRICE;
+    }
+    localStorage.setItem('mn_profile_'+currentUser.uid, JSON.stringify(profile));
   }
 
   function renderBuyState(){
     const wrap=document.getElementById('buy-actions');
+    const balanceEl=document.getElementById('buy-balance');
+    balanceEl.textContent='Wallet balance: ₹'+(profile?.balance ?? 0);
     if(profile?.hasRing){ wrap.innerHTML='<span class="owned-badge">You own the Nexus Ring</span>'; }
     else{ wrap.innerHTML='<button class="btn btn-primary" id="buy-btn">Book the Nexus Ring</button>'; document.getElementById('buy-btn').addEventListener('click', handleBuy); }
   }
@@ -257,8 +295,29 @@
   async function handleBuy(){
     const err=document.getElementById('buy-error'); err.classList.remove('show');
     const btn=document.getElementById('buy-btn'); btn.disabled=true; btn.textContent='Processing…';
-    try{ await setHasRing(true); renderBuyState(); toast('The Nexus Ring is yours. Visit your dashboard to see it live.'); }
-    catch(e){ err.textContent='Could not complete purchase. Try again.'; err.classList.add('show'); btn.disabled=false; btn.textContent='Book the Nexus Ring'; }
+
+    if((profile.balance||0) < RING_PRICE){
+      err.textContent=`Insufficient balance. The ring costs ₹${RING_PRICE}, your wallet has ₹${profile.balance||0}.`;
+      err.classList.add('show');
+      btn.disabled=false; btn.textContent='Book the Nexus Ring';
+      return;
+    }
+
+    try{
+      await purchaseRing();
+      renderBuyState();
+      toast(`The Nexus Ring is yours. ₹${RING_PRICE} deducted — balance now ₹${profile.balance}.`);
+    }catch(e){
+      if(e.message==='insufficient'){
+        err.textContent=`Insufficient balance. The ring costs ₹${RING_PRICE}, your wallet has ₹${profile.balance||0}.`;
+      }else if(e.message==='timeout'){
+        err.textContent='Request timed out. Check your connection and try again.';
+      }else{
+        err.textContent='Could not complete purchase. Try again.';
+      }
+      err.classList.add('show');
+      btn.disabled=false; btn.textContent='Book the Nexus Ring';
+    }
   }
 
   let toastTimer=null;
@@ -304,7 +363,7 @@
       renderer.setSize(w,h,false); cam.aspect=w/h; cam.updateProjectionMatrix();
     }
     size();
-    window.addEventListener('resize', size); // Added to handle window resizing
+    window.addEventListener('resize', size);
 
     const key=new THREE.DirectionalLight(0xffffff,1.6); key.position.set(4,5,6); scene.add(key);
     const fill=new THREE.DirectionalLight(0xc4c6c9,0.7); fill.position.set(-5,-3,4); scene.add(fill);
@@ -313,31 +372,12 @@
 
     let group = new THREE.Group(); scene.add(group);
     
-    // Use the modern GLTFLoader
     const loader = new THREE.GLTFLoader();
     
     loader.load('object.glb', 
         (gltf) => {
-            const loaded = gltf.scene; // GLTF wraps the object in a scene
+            const loaded = gltf.scene;
 
-            // Optional: If you want to force the material to be super shiny like your original code, 
-            // you can still overwrite the Blender materials here:
-            /*
-            loaded.traverse((child) => {
-                if (child.isMesh) {
-                    child.material = new THREE.MeshPhysicalMaterial({
-                        color: 0x1a1a1c,
-                        metalness: 0.9,
-                        roughness: 0.22,
-                        clearcoat: 0.8,
-                        clearcoatRoughness: 0.18,
-                        reflectivity: 0.6
-                    });
-                }
-            });
-            */
-
-            // Center and scale the model just like before
             const box = new THREE.Box3().setFromObject(loaded);
             const sizeBox = box.getSize(new THREE.Vector3());
             const center = box.getCenter(new THREE.Vector3());
@@ -349,13 +389,11 @@
             
             group.add(loaded);
         },
-        undefined, // onProgress
+        undefined,
         (error) => {
             console.error("Error loading GLB:", error);
         }
     );
-
-    // --- NEW INTERACTIVITY & INERTIA LOGIC ---
 
     let isDragging = false;
     let previousMousePosition = { x: 0, y: 0 };
@@ -367,7 +405,6 @@
     const baseSpinSpeed = 0.005; 
     const dragSensitivity = 0.008; 
 
-    // PREVENT NATIVE BROWSER DRAG/HIGHLIGHT (Fixes the disappearing cursor)
     canvas.style.touchAction = 'none'; 
     canvas.style.userSelect = 'none';
 
@@ -377,11 +414,10 @@
         idleTimeout = setTimeout(() => { isIdle = true; }, 5000);
     }
 
-    // Using 'pointer' events covers both Mouse and Touch automatically
     canvas.addEventListener('pointerdown', (e) => {
         isDragging = true;
         previousMousePosition = { x: e.clientX, y: e.clientY };
-        velocity = { x: 0, y: 0 }; // Kill any existing momentum on grab
+        velocity = { x: 0, y: 0 };
         resetIdleTimer();
     });
 
@@ -392,15 +428,12 @@
                 y: e.clientY - previousMousePosition.y
             };
 
-            // Calculate rotation for this exact frame
             const deltaY = deltaMove.x * dragSensitivity;
             const deltaX = deltaMove.y * dragSensitivity;
 
-            // Apply immediately to the model
             group.rotation.y += deltaY;
             group.rotation.x += deltaX;
 
-            // Store as momentum for when the user lets go
             velocity.y = deltaY;
             velocity.x = deltaX;
 
@@ -420,17 +453,13 @@
         requestAnimationFrame(animate);
 
         if (!isDragging) {
-            // Apply momentum ONLY when the user is NOT dragging
             group.rotation.x += velocity.x;
             group.rotation.y += velocity.y;
 
-            // Dampen the velocity (friction)
             velocity.x *= friction;
             velocity.y *= friction;
 
-            // Smoothly reset if idle
             if (isIdle) {
-
                 velocity.y += (baseSpinSpeed - velocity.y) * 0.02;
                 group.rotation.x += (0.75 - group.rotation.x) * 0.05;
                 group.rotation.y += (7 - group.rotation.y) * 0.05;
@@ -528,7 +557,6 @@
         'float field(vec2 p, vec4 pt, vec2 vel){',
         '  vec2 d = p - pt.xy;',
         
-        // --- HOLLOW DIAMOND (Buttons - Rotated 45deg) pt.w = 3.0 ---
         '  if (pt.w > 2.5) {',
         '    float boxDist = (abs(d.x) + abs(d.y)) * 0.7071;', 
         '    float thick = abs(boxDist - pt.z);',
@@ -536,7 +564,6 @@
         '    return 3.0 / (distSq + 1.0);',
         '  }',
 
-        // --- HOLLOW RING (3D Model) pt.w = 2.0 ---
         '  if (pt.w > 1.5) {',
         '    float distFromCenter = length(d);',
         '    float ringThickness = abs(distFromCenter - pt.z);',
@@ -544,7 +571,6 @@
         '    return 3.0 / (ringDistSq + 1.0);', 
         '  }',
 
-        // --- STANDARD SHAPES (Fluid/Rounded & Sharp Square) ---
         '  float sp = length(vel);',
         '  if (sp > 0.5){',
         '    vec2 dir = vel / sp;',
@@ -555,7 +581,6 @@
         
         '  float distSq = dot(d,d);',
         
-        // Solid Sharp Square pt.w = 0.0
         '  if (pt.w < 0.5) {',
         '    float boxDist = max(abs(d.x), abs(d.y));',
         '    distSq = boxDist * boxDist * 1.8;',
@@ -689,34 +714,29 @@
         const baseHeadR = 18 + Math.min(10, speed * 0.01); 
         let count = 0;
         
-        // 1. THE MAIN CORE (Fades out for text/3D)
         const headR = baseHeadR * (1 - maxHover) + 4 * hoverBtnFactor; 
         pts[0] = px; pts[1] = py; pts[2] = headR * (1 - hoverTxtFactor) * (1 - hover3dFactor); 
         pts[3] = 1.0; 
         vels[0] = vx * 0.01; vels[1] = vy * 0.01; 
         count = 1;
 
-        // 2. SUBTLE BUTTON HOVER: Rotated 45-degree Diamond Box
         if (hoverBtnFactor > 0.01) {
             pts[count*4] = px; pts[count*4+1] = py;
             pts[count*4+2] = 12 * hoverBtnFactor; 
-            pts[count*4+3] = 3.0; // Hollow Diamond flag
+            pts[count*4+3] = 3.0;
             vels[count*2] = 0; vels[count*2+1] = 0;
             count++;
         }
 
-        // 3. TEXT HOVER: Proper Size Rounded I-Beam
         if (hoverTxtFactor > 0.01) {
             
-            // Vertical Stem
             pts[count*4] = px; pts[count*4+1] = py;
             pts[count*4+2] = 1.8 * hoverTxtFactor; 
-            pts[count*4+3] = 1.0; // Fluid/Rounded flag
+            pts[count*4+3] = 1.0; 
             vels[count*2] = 0; 
             vels[count*2+1] = 200 * hoverTxtFactor; 
             count++;
 
-            // Top Serif
             pts[count*4] = px; pts[count*4+1] = py - 10 * hoverTxtFactor;
             pts[count*4+2] = 1.8 * hoverTxtFactor; 
             pts[count*4+3] = 1.0; 
@@ -724,7 +744,6 @@
             vels[count*2+1] = 0; 
             count++;
 
-            // Bottom Serif
             pts[count*4] = px; pts[count*4+1] = py + 10 * hoverTxtFactor;
             pts[count*4+2] = 1.8 * hoverTxtFactor; 
             pts[count*4+3] = 1.0; 
@@ -733,23 +752,19 @@
             count++;
         }
 
-        // 4. GYROSCOPIC AXIS LOCK (3D MODEL)
         if (hover3dFactor > 0.01) {
-            // Smaller Hollow Ring
             pts[count*4] = px; pts[count*4+1] = py;
-            pts[count*4+2] = 16 * hover3dFactor; // Shrunk from 24 to 16
-            pts[count*4+3] = 2.0; // Hollow Ring
+            pts[count*4+2] = 16 * hover3dFactor;
+            pts[count*4+3] = 2.0;
             vels[count*2] = 0; vels[count*2+1] = 0;
             count++;
 
-            // Center Pivot Dot
             pts[count*4] = px; pts[count*4+1] = py;
-            pts[count*4+2] = 2.5 * hover3dFactor; // Slightly smaller dot for precision
+            pts[count*4+2] = 2.5 * hover3dFactor;
             pts[count*4+3] = 0.0;
             vels[count*2] = 0; vels[count*2+1] = 0;
             count++;
 
-            // The Dynamic Rotation Axis (When Dragging)
             if (drag3dFactor > 0.01 && speed > 5) {
                 const axisAngle = Math.atan2(vy, vx) + Math.PI / 2;
                 pts[count*4] = px; pts[count*4+1] = py;
@@ -760,7 +775,6 @@
             }
         }
 
-        // 5. THE DATA CABLE TRAIL
         const trailFade = 1.0 - maxHover;
         for (let i=0; i<trail.length && count < MAX_POINTS; i++){
           const t = trail[i]; const fade = 1.0 - i / trail.length;
@@ -769,7 +783,6 @@
           vels[count*2] = t.vx || 0; vels[count*2+1] = t.vy || 0; count++;
         }
 
-        // 6. THE SHED PIXELS
         for (let i=0; i<pixels.length && count < MAX_POINTS; i++) {
             const p = pixels[i]; pts[count*4] = p.x; pts[count*4+1] = p.y;
             pts[count*4+2] = p.size * Math.pow(p.life, 0.5); pts[count*4+3] = 0.0; 

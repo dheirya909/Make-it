@@ -22,7 +22,7 @@
   ::selection{background:var(--paper);color:var(--ink);}
   #fluid-canvas{position:fixed;inset:0;width:100vw;height:100vh;z-index:9000;pointer-events:none;mix-blend-mode:difference;}
 
-  .topbar{position:fixed;top:0;left:0;right:0;z-index:80;display:flex;align-items:center;justify-content:space-between;padding:22px clamp(24px,6vw,64px);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px) saturate(140%);border-bottom:1px solid var(--hair);background:rgba(10,10,11,0.4);}
+  .topbar{position:fixed;top:0;left:0;right:0;z-index:80;display:flex;align-items:center;justify-content:space-between;padding:22px clamp(24px,6vw,64px);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--hair);}
   .brand{font-family:var(--display);font-weight:500;font-size:15px;letter-spacing:0.32em;text-decoration:none;color:var(--paper);text-transform:uppercase;}
   .nav-cluster{display:flex;align-items:center;gap:36px;}
   .nav-links{display:flex;align-items:center;gap:32px;}
@@ -142,9 +142,9 @@
   <a href="#" class="brand">METRO&nbsp;NEXUS</a>
   <div class="nav-cluster">
     <nav class="nav-links">
-      <a href="#" class="nav-link">Dashboard</a>
-      <a href="#" class="nav-link">The Nexus Ring</a>
-      <a href="#" class="nav-link active">Map</a>
+      <a href="dashboard.html" class="nav-link">Dashboard</a>
+      <a href="ring.html" class="nav-link">The Nexus Ring</a>
+      <a href="map.html" class="nav-link active">Map</a>
     </nav>
     <button class="logout-btn">Log out</button>
     <button class="nav-toggle">&#9776;</button>
