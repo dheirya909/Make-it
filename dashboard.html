@@ -32,7 +32,7 @@
       rgba(255, 255, 255, 0.08), 
       rgba(255, 255, 255, 0)
     ), 
-    var(--ink, #000); /* Falls back to black if --ink isn't defined */
+    var(--ink, #000); 
   overflow-x: hidden;
   cursor: none;
   position: relative;
@@ -47,7 +47,6 @@
     width:420px;height:420px;z-index:0;opacity:0.05;pointer-events:none;
   }
 
-  /* Minimal Navbar — brand left, all links right */
   .topbar{
     position:fixed;top:0;left:0;right:0;z-index:80;
     display:flex;align-items:center;justify-content:space-between;
@@ -96,8 +95,8 @@
 
   .grid{display:grid;gap:28px;}
   .row-stats{grid-template-columns:repeat(4,1fr);}
-  .row-mid{grid-template-columns:2fr 1fr;}
-  @media(max-width:980px){.row-stats{grid-template-columns:repeat(2,1fr);}.row-mid{grid-template-columns:1fr;}}
+  .row-mid{grid-template-columns:1fr;}
+  @media(max-width:980px){.row-stats{grid-template-columns:repeat(2,1fr);}}
   @media(max-width:560px){.row-stats{grid-template-columns:1fr 1fr;}}
 
   .card{
@@ -134,7 +133,6 @@
   .tile .t-val{font-family:var(--display);font-weight:400;font-size:38px;margin-top:20px;line-height:1;letter-spacing:-0.01em;}
   .tile .t-sub{font-family:var(--body);font-size:12px;color:var(--steel);margin-top:12px;font-weight:300;}
 
-  /* Ring tile (replaces Total Rides when owned) */
   .ring-tile{overflow:hidden;min-height:180px;display:flex;flex-direction:column;}
   .ring-tile .ring-canvas-wrap{position:relative;flex:1;min-height:120px;margin-top:6px;}
   .ring-tile canvas{width:100% !important;height:100% !important;display:block;}
@@ -143,12 +141,11 @@
     margin-top:10px;
   }
 
-  /* Month tile: number replaced with a mini 3D ring */
   .month-ring-tile{overflow:hidden;min-height:180px;display:flex;flex-direction:column;}
   .month-ring-tile .month-ring-wrap{position:relative;flex:1;min-height:100px;margin-top:12px;}
   .month-ring-tile canvas{width:100% !important;height:100% !important;display:block;}
 
-  .chart-wrap{position:relative;height:280px;}
+  .chart-wrap{position:relative;height:420px;min-height:320px;}
   .chart-legend{display:flex;gap:24px;margin-top:20px;flex-wrap:wrap;}
   .chart-legend span{font-family:var(--body);font-size:12px;color:var(--steel);display:flex;align-items:center;gap:10px;font-weight:300;}
   .chart-legend i{width:14px;height:1px;display:block;}
@@ -198,7 +195,6 @@
   .modal-error{background:transparent;border:1px solid var(--hair-strong);border-radius:2px;padding:12px 15px;font-family:var(--body);font-size:13px;color:var(--paper);display:none;font-weight:300;}
   .modal-error.show{display:block;}
 
-  /* High-traffic advisory banner in the booking modal */
   .modal-warning{
     display:none;
     background:rgba(245,245,244,0.06);
@@ -293,17 +289,13 @@
     .modal{padding:30px 24px;}
     .row-stats{grid-template-columns:1fr 1fr;gap:14px;}
     .tile .t-val{font-size:28px;}
-    .chart-wrap{height:220px;}
+    .chart-wrap{height:320px;}
   }
-  @media(max-width:360px){
-    .row-stats{grid-template-columns:1fr;}
-  }
-  /* Music Toggle Button */
   .music-toggle {
     position: fixed;
     bottom: 34px;
     right: 34px;
-    z-index: 160; /* Higher than mobile actions */
+    z-index: 160; 
     background: var(--ink-3);
     border: 1px solid var(--hair-strong);
     color: var(--paper);
@@ -321,7 +313,7 @@
   }
   @media(max-width: 680px){
     .music-toggle {
-      bottom: calc(85px + env(safe-area-inset-bottom)); /* Sits perfectly above the mobile footer bar */
+      bottom: calc(85px + env(safe-area-inset-bottom)); 
       right: 20px;
       padding: 10px 14px;
     }
@@ -406,11 +398,6 @@
           <span><i style="background:rgba(255,255,255,0.3)"></i>Weekly average</span>
         </div>
       </div>
-
-      <div class="card congestion-card reveal">
-        <div class="card-head"><h3>Line Traffic</h3></div>
-        <div id="congestion-list"></div>
-      </div>
     </section>
 
     <section class="card trip-card hidden reveal" id="trip-card">
@@ -488,10 +475,9 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 
   <script>
   /* ============ FIREBASE ============ */
@@ -521,12 +507,20 @@
     window.addEventListener('keydown', start);
   })();
 
-  /* ============ METRO LINE DATA ============ */
+  /* ============ METRO LINE DATA (UPDATED) ============ */
   const STATIONS = [
-    "Chroma Junction","Ironport","Sector 7","Grand Central",
-    "Blackwood","Ariamis","Meridian Boulevard"
+    "Nexus Central",
+    "Crimson Square", "Ruby Junction",
+    "Sunburst Plaza", "Golden Gate",
+    "Amethyst Park", "Violet Heights",
+    "Magenta Mall", "Rose Terminal",
+    "Coral Junction", "Tangerine Hub",
+    "Sapphire Street", "Azure Bay",
+    "Jade Gardens", "Emerald Park",
+    "Mint Plaza", "Citrus Square"
   ];
-  const CENTER_STATION = "Grand Central";
+  const CENTER_STATION = "Nexus Central";
+  
   function fareFor(from, to){
     const i = STATIONS.indexOf(from), j = STATIONS.indexOf(to);
     if(i<0||j<0||i===j) return 0;
@@ -573,12 +567,16 @@
         createdAt:Date.now()
       };
     },
+    
+    // UPDATED FAKE TRIPS
     seedBookingsLS(){
       const arr=[]; const now=Date.now();
-      const picks=[["Chroma Junction","Grand Central"],["Ironport","Blackwood"],["Sector 7","Ariamis"],
-        ["Meridian Boulevard","Grand Central"],["Chroma Junction","Sector 7"],["Grand Central","Ariamis"],
-        ["Blackwood","Chroma Junction"],["Ironport","Meridian Boulevard"],["Ariamis","Sector 7"],
-        ["Chroma Junction","Meridian Boulevard"],["Grand Central","Ironport"],["Sector 7","Blackwood"]];
+      const picks=[
+        ["Crimson Square","Nexus Central"], ["Ruby Junction","Sunburst Plaza"], ["Golden Gate","Amethyst Park"],
+        ["Violet Heights","Nexus Central"], ["Magenta Mall","Rose Terminal"], ["Nexus Central","Coral Junction"],
+        ["Tangerine Hub","Sapphire Street"], ["Azure Bay","Nexus Central"], ["Jade Gardens","Emerald Park"],
+        ["Mint Plaza","Citrus Square"], ["Nexus Central","Crimson Square"], ["Sunburst Plaza","Violet Heights"]
+      ];
       const statuses=["Completed","Completed","Completed","Completed","Completed","Cancelled","Completed","Completed"];
       for(let k=0;k<picks.length;k++){
         const [f,t]=picks[k];
@@ -593,6 +591,7 @@
       arr.sort((a,b)=>b.timestamp-a.timestamp);
       return arr;
     },
+    
     async seedBookingsFS(uid){
       const ls=this.seedBookingsLS();
       const batch=db.batch();
@@ -643,7 +642,11 @@
       if(this.useFS){
         return db.collection('users').doc(this.uid).collection('bookings')
           .onSnapshot(snap=>{
-            const arr=[]; snap.forEach(d=>arr.push({id:d.id,...d.data()}));
+            let arr=[]; snap.forEach(d=>arr.push({id:d.id,...d.data()}));
+            
+            // SELF HEALING: If Firebase holds old station data, filter it out from UI to prevent blank cards
+            arr = arr.filter(b => STATIONS.includes(b.from) && STATIONS.includes(b.to));
+            
             arr.sort((a,b)=>(b.timestamp||0)-(a.timestamp||0));
             cb(arr);
           }, ()=>{ this.useFS=false; cb(this.lsBookings()); });
@@ -657,8 +660,7 @@
   /* ============ STATE ============ */
   let currentUser=null, profile=null, bookings=[], chart=null, unsub=null, activeTrip=null, tripTimer=null;
 
-  // Traffic-tag lookup shared between the "Line Traffic" card and the booking modal advisory.
-  let congestionTags = {}; // { stationName: 'High' | 'Medium' | 'Low' }
+  let congestionTags = {};
   let bookingWarningAcknowledged = false;
 
 /* ============ AUTH GUARD ============ */
@@ -669,8 +671,18 @@ auth.onAuthStateChanged(async (user)=>{
   profile=await Store.getProfile();
   if(profile.hasRing===undefined) profile.hasRing=false;
   hydrateIdentity(user, profile);
-  unsub=Store.onBookings((arr)=>{ bookings=arr; render(); });
-  // Kick off month ring animation
+  
+  unsub=Store.onBookings((arr)=>{ 
+    // SELF HEALING FOR LOCAL STORAGE
+    if(arr.length > 0 && !STATIONS.includes(arr[0].from)) {
+        localStorage.removeItem('mn_bookings_'+user.uid);
+        arr = Store.seedBookingsLS();
+        Store.saveBookings(arr);
+    }
+    bookings=arr; 
+    render(); 
+  });
+  
   initMonthRing();
 });
 
@@ -688,7 +700,6 @@ auth.onAuthStateChanged(async (user)=>{
     renderBalance();
     renderStats();
     renderChart();
-    renderCongestion();
     applyRingState();
     checkTrafficWarning();
   }
@@ -696,7 +707,7 @@ auth.onAuthStateChanged(async (user)=>{
   function applyRingState(){
     const ridesTile=document.getElementById('rides-tile');
     const ringTile=document.getElementById('ring-tile');
-    if(profile?.hasRing){
+    if(false){
       ridesTile.style.display='none';
       ringTile.style.display='flex';
       if(!window._ringCardInit){ initRingCard(); window._ringCardInit=true; }
@@ -767,37 +778,7 @@ function animateTo(id, target, raw){
     });
   }
 
-  function renderCongestion(){
-    const now=Date.now(), day=86400000;
-    const counts=STATIONS.map(s=>{
-      return bookings.filter(b=>{
-        const t=b.timestamp||0; const recent=t>now-day;
-        return recent&&(b.from===s||b.to===s);
-      }).length;
-    });
-    const max=Math.max(1,...counts);
-    congestionTags = {};
-    const list=document.getElementById('congestion-list');
-    list.innerHTML=STATIONS.map((s,i)=>{
-      const c=counts[i]; const ratio=c/max;
-      let tag='Low';
-      if(ratio>0.66){tag='High';}
-      else if(ratio>0.33){tag='Medium';}
-      congestionTags[s]=tag;
-      const w=Math.max(8,Math.round(ratio*100));
-      const tagClass = tag==='High' ? ' tag-high' : '';
-      return `<div class="station">
-        <div class="s-row"><span class="s-name">${s}</span><span class="s-tag${tagClass}">${tag}</span></div>
-        <div class="bar"><i style="width:${w}%"></i></div>
-      </div>`;
-    }).join('');
-  }
 
-  /* ============ HIGH-TRAFFIC BOOKING ADVISORY ============ */
-  // Reads the same congestion tags shown in the "Line Traffic" card. If either the
-  // origin or destination station is currently tagged High, we surface an advisory
-  // in the booking modal suggesting the train instead, and require a confirmed
-  // second click before the pod booking goes through.
   function checkTrafficWarning(){
     const warningBox=document.getElementById('booking-warning');
     const warningText=document.getElementById('booking-warning-text');
@@ -942,7 +923,7 @@ function animateTo(id, target, raw){
   }
   function onStationChange(){
     updateFare();
-    bookingWarningAcknowledged = false; // stations changed — re-arm the advisory
+    bookingWarningAcknowledged = false;
     checkTrafficWarning();
   }
   bkFrom.addEventListener('change',onStationChange);
@@ -977,8 +958,6 @@ function animateTo(id, target, raw){
     if((profile?.balance||0)<fare){ err.textContent='Insufficient balance. Please top up your wallet.'; err.classList.add('show'); return; }
     if(activeTrip){ err.textContent='Your pod is already on a trip. Wait for it to arrive.'; err.classList.add('show'); return; }
 
-    // High-traffic advisory gate: first click on a High-traffic leg just confirms the
-    // person has seen the warning; it does not book yet.
     const fromTag=congestionTags[from], toTag=congestionTags[to];
     const highStation = fromTag==='High' ? from : (toTag==='High' ? to : null);
     if(highStation && !bookingWarningAcknowledged){
@@ -1084,25 +1063,37 @@ function animateTo(id, target, raw){
     const fill=new THREE.DirectionalLight(0xc4c6c9,0.6); fill.position.set(-4,-2,3); ringCardScene.add(fill);
     ringCardScene.add(new THREE.AmbientLight(0x404040,0.7));
 
-    const loader=new THREE.OBJLoader();
-    loader.load('object.obj',
-      (obj)=>{
-        ringCardObj=obj;
-        obj.traverse(c=>{ if(c.isMesh){ c.material=new THREE.MeshPhysicalMaterial({color:0x1a1a1c,metalness:0.9,roughness:0.25,clearcoat:0.7,clearcoatRoughness:0.2}); } });
-        const box=new THREE.Box3().setFromObject(obj);
-        const size=box.getSize(new THREE.Vector3());
-        const center=box.getCenter(new THREE.Vector3());
-        const maxDim=Math.max(size.x,size.y,size.z)||1;
-        const scale=2.2/maxDim;
+    const loader = new THREE.GLTFLoader();
+    loader.load('object2.glb', 
+      (gltf) => {
+        const obj = gltf.scene; 
+        ringCardObj = obj;
+        
+        obj.traverse(c => { 
+          if(c.isMesh && c.material){ 
+             c.material.side = THREE.DoubleSide;
+          } 
+        });
+        
+        const box = new THREE.Box3().setFromObject(obj);
+        const size = box.getSize(new THREE.Vector3());
+        const center = box.getCenter(new THREE.Vector3());
+        const maxDim = Math.max(size.x, size.y, size.z) || 1;
+        const scale = 2.2 / maxDim;
+        
         obj.scale.setScalar(scale);
         obj.position.sub(center.multiplyScalar(scale));
+        
+        obj.rotation.x = Math.PI * 0.15; 
+        
         ringCardScene.add(obj);
         animateRingCard();
       },
       undefined,
-      (err)=>{
-        ringCardObj=new THREE.Mesh(new THREE.TorusGeometry(1,0.4,32,100),
+      (err) => {
+        ringCardObj = new THREE.Mesh(new THREE.TorusGeometry(1,0.4,32,100),
           new THREE.MeshPhysicalMaterial({color:0x1a1a1c,metalness:0.9,roughness:0.25,clearcoat:0.7}));
+        ringCardObj.rotation.x = Math.PI * 0.15; 
         ringCardScene.add(ringCardObj);
         animateRingCard();
       }
@@ -1110,7 +1101,7 @@ function animateTo(id, target, raw){
 
     function animateRingCard(){
       ringCardRAF=requestAnimationFrame(animateRingCard);
-      if(ringCardObj){ ringCardObj.rotation.y+=0.006; ringCardObj.rotation.x+=0.002; }
+      if(ringCardObj){ ringCardObj.rotation.y+=0.006; }
       ringCardRenderer.render(ringCardScene, ringCardCam);
     }
     window.addEventListener('resize',()=>{
@@ -1137,32 +1128,44 @@ function animateTo(id, target, raw){
     const fill=new THREE.DirectionalLight(0xc4c6c9,0.6); fill.position.set(-4,-2,3); scene.add(fill);
     scene.add(new THREE.AmbientLight(0x404040,0.7));
 
-    let obj=null;
-    const loader=new THREE.OBJLoader();
-    loader.load('object.obj',
-      (o)=>{
-        obj=o;
-        o.traverse(c=>{ if(c.isMesh){ c.material=new THREE.MeshPhysicalMaterial({color:0x1a1a1c,metalness:0.9,roughness:0.25,clearcoat:0.7,clearcoatRoughness:0.2}); } });
-        const box=new THREE.Box3().setFromObject(o);
-        const size=box.getSize(new THREE.Vector3());
-        const center=box.getCenter(new THREE.Vector3());
-        const maxDim=Math.max(size.x,size.y,size.z)||1;
-        const scale=2.0/maxDim;
+    let obj = null;
+    const loader = new THREE.GLTFLoader();
+    loader.load('object2.glb', 
+      (gltf) => {
+        const o = gltf.scene;
+        obj = o;
+        
+        o.traverse(c => { 
+          if(c.isMesh && c.material){ 
+             c.material.side = THREE.DoubleSide;
+          } 
+        });
+        
+        const box = new THREE.Box3().setFromObject(o);
+        const size = box.getSize(new THREE.Vector3());
+        const center = box.getCenter(new THREE.Vector3());
+        const maxDim = Math.max(size.x, size.y, size.z) || 1;
+        const scale = 3.0 / maxDim;
+        
         o.scale.setScalar(scale);
         o.position.sub(center.multiplyScalar(scale));
+        
+        o.rotation.x = Math.PI * 0.15;
+        
         scene.add(o);
       },
       undefined,
-      ()=>{
-        obj=new THREE.Mesh(new THREE.TorusGeometry(1,0.36,32,100),
+      (err) => {
+        obj = new THREE.Mesh(new THREE.TorusGeometry(1,0.36,32,100),
           new THREE.MeshPhysicalMaterial({color:0x1a1a1c,metalness:0.9,roughness:0.25,clearcoat:0.7}));
+        obj.rotation.x = Math.PI * 0.15; 
         scene.add(obj);
       }
     );
 
     (function animate(){
       requestAnimationFrame(animate);
-      if(obj){ obj.rotation.y+=0.012; obj.rotation.x+=0.003; }
+      if(obj){ obj.rotation.y+=0.012; }
       renderer.render(scene, cam);
     })();
 
@@ -1538,7 +1541,7 @@ function animateTo(id, target, raw){
       }
       requestAnimationFrame(frame);
     })();
-
+    
     /* ============ MUSIC TOGGLE CONTROLLER ============ */
   document.getElementById('music-toggle').addEventListener('click', (e) => {
     // Prevents global pointer events from fighting with the toggle behavior
